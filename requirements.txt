@@ -1,0 +1,9 @@
+daiquiri
+flask
+pygithub
+cryptography
+requests
+redis
+rq
+gunicorn
+six

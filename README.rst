@@ -1,0 +1,51 @@
+==========
+pastamaker
+==========
+
+.. image:: https://travis-ci.org/sileht/pastamaker.png?branch=master
+    :target: https://travis-ci.org/sileht/pastamaker
+    :alt: Build Status
+
+pastamaker is a Github App to automatically manage Pull Requests
+"branch update" and "merge".
+
+
+Permssions and Webhook needed:
+==============================
+
+Commit statuses - ReadOnly
+
+* Status
+
+Pull requests - ReadWrite (Maybe ReadyOnly)
+
+* Pull request
+* Pull request review
+
+Repository contents - ReadWrite
+
+* No webhook
+
+
+Setup::
+
+    heroku apps:create pastamaker
+    heroku addons:create redistogo:nano
+    heroku addons:create scheduler:standard
+
+    heroku config:set -a pastamaker \
+        PASTAMAKER_INTEGRATION_ID=XXXX \
+        PASTAMAKER_WEBHOOK_SECRET="<webhook_secret>" \
+        PASTAMAKER_PRIVATE_KEY="$(cat <path to the private key>)" \
+        PASTAMAKER_REQUIRED_APPROVALS=2 \
+        PASTAMAKER_BASE_URL="https://pastamaker.herokuapp.com" \
+        PASTAMAKER_WEBHACK_USERNAME="pastamaker-bot" \
+        PASTAMAKER_WEBHACK_PASSWORD="<password>"
+
+    git push -f heroku master
+
+    heroku ps:scale worker=1
+
+    heroku addons:open scheduler:standard
+    # trigger refresh manually or to configure the scheduler
+    heroku run python pastamaker/refresher.py YYYYY/gnocchixyz/gnocchi/branch

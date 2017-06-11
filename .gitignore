@@ -1,0 +1,9 @@
+.testrepository
+*.pyc
+.tox
+*.egg-info
+AUTHORS
+cover
+.coverage
+dist
+*.pem
