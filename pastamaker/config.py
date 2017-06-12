@@ -26,6 +26,7 @@ _CONFIG = {
     "WEBHACK_PASSWORD": None,
     "DEBUG": False,
     "BASE_URL": None,
+    "FLUSH_REDIS_ON_STARTUP": False,
 }
 
 print("**********************************************************")
