@@ -104,7 +104,7 @@ def is_branch_protected_as_expected(repo, branch):
 
 def is_approved(p):
     valid_user_ids = map(lambda u: u.id,
-                         p.base.repo.organization.get_members())
+                         p.base.repo.get_collaborators())
 
     def get_users(users, r):
         if r.user.id not in valid_user_ids:
