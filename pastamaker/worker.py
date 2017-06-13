@@ -35,7 +35,7 @@ LOG = logging.getLogger(__name__)
 
 def pretty_ident(ident):
     _, user, repo, branch = ident.split(":")
-    return user + "/" + repo + "#??@" + branch + "(??)"
+    return user + "/" + repo + "#??@" + branch + " (??)"
 
 
 def pretty_pr(p):
