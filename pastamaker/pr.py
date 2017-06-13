@@ -64,8 +64,14 @@ def approved(self):
 
         if review.state == 'APPROVED':
             users.add(review.user.login)
-        elif review.user.login in users:
-            users.remove(review.user.login)
+        elif review.state in ["DISMISSED", "CHANGES_REQUESTED"]:
+            if review.user.login in users:
+                users.remove(review.user.login)
+        elif review.state == 'COMMENTED':
+            pass
+        else:
+            LOG.error("%s FIXME review state unhandled: %s",
+                      self.pretty(), review.state)
         return users
 
     # Reviews are in chronological order
