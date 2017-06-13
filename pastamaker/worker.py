@@ -103,7 +103,13 @@ def is_branch_protected_as_expected(repo, branch):
 
 
 def is_approved(p):
+    valid_user_ids = map(lambda u: u.id,
+                         p.base.repo.organization.get_members())
+
     def get_users(users, r):
+        if r.user.id not in valid_user_ids:
+            return users
+
         if r.state == 'APPROVED':
             users.add(r.user.login)
         elif r.user.login in users:
