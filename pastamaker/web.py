@@ -73,19 +73,8 @@ def event_handler():
     event_id = flask.request.headers.get("X-GitHub-Delivery")
     data = flask.request.get_json()
 
-    if event_type == "pull_request":
-        extra = "PR#%d action: %s" % (data["number"], data["action"])
-    elif event_type == "pull_request_review":
-        extra = "PR#%d action: %s, state: %s" % (
-            data["pull_request"]["number"],
-            data["action"], data["review"]["state"])
-    elif event_type == "status":
-        extra = "context: %s, state: %s, sha: %s" % (
-            data["context"], data["state"], data["sha"])
-    else:
-        extra = " ignored"
-
-    if event_type in ["pull_request", "status", "pull_request_review"]:
+    if event_type in ["refresh", "pull_request", "status",
+                      "pull_request_review"]:
         get_queue().enqueue(worker.event_handler, event_type, data)
 
     if "repository" in data:
@@ -93,9 +82,9 @@ def event_handler():
     else:
         repo_name = data["installation"]["account"]["login"]
 
-    LOG.info('[%s/%s] received "%s" event (%s): %s',
+    LOG.info('[%s/%s] received "%s" event "%s"',
              data["installation"]["id"], repo_name,
-             event_type, event_id, extra)
+             event_type, event_id)
 
     return "", 202
 
