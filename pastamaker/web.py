@@ -88,9 +88,13 @@ def event_handler():
     if event_type in ["pull_request", "status", "pull_request_review"]:
         get_queue().enqueue(worker.event_handler, event_type, data)
 
+    if "repository" in data:
+        repo_name = data["repository"]["full_name"],
+    else:
+        repo_name = data["installation"]["account"]["login"]
+
     LOG.info('[%s/%s] received "%s" event (%s): %s',
-             data["installation"]["id"],
-             data["repository"]["full_name"],
+             data["installation"]["id"], repo_name,
              event_type, event_id, extra)
 
     return "", 202
