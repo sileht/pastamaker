@@ -73,7 +73,7 @@ class PendingPulls(dict):
             LOG.info("%s expected, sha %s", p.pretty(), p.head.sha)
 
     def add(self, p):
-        p.refresh()
+        p.refresh(force=True)
         serialized = json.dumps((p.raw_headers, p.raw_data))
         self._conn.set(self._ident + p.base.ref, serialized)
         self[p.base.ref] = p

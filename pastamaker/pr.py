@@ -36,9 +36,11 @@ def mergeable_state_is_valid(self):
     return self.mergeable_state not in ["unknown", None]
 
 
-def refresh(self):
-    # FIXME(sileht): use tenacity
-    if self.mergeable_state_is_valid():
+def refresh(self, force=False):
+    if hasattr(self, "_pastamaker_priority"):
+        delattr(self, "_pastamaker_priority")
+
+    if not force and self.mergeable_state_is_valid():
         return self
 
     # Github is currently processing this PR, we wait the completion
@@ -49,8 +51,6 @@ def refresh(self):
             break
         time.sleep(0.42)  # you known, this one always work
 
-    if hasattr(self, "_pastamaker_priority"):
-        delattr(self, "_pastamaker_priority")
     LOG.info("%s, refreshed", self.pretty())
     return self
 
