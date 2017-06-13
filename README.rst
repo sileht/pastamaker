@@ -12,12 +12,12 @@ pastamaker is a Github App to automatically manage Pull Requests
 It's currently used by `gnocchixyz projects <https://github.com/gnocchixyz>`_, the app name is 'pastamaker'.
 
 Github App Settings
-================
+===================
 
 You should obviosult replace https://<app-name>.herokuapp.com by the url where you host the application.
 
 General
---------
+-------
 
 * Homepage URL:  https://<app-name>.herokuapp.com
 * User authorization callback URL: https://<app-name>.herokuapp.com/auth
@@ -28,16 +28,24 @@ General
 
 Pick the ID on the right, you will need it later.
 
-Permssions
-----------------------
+Permissions
+-----------
 
-* Commit statuses - ReadOnly
- + Status
-* Pull requests - ReadWrite (Maybe ReadyOnly)
- + Pull request
- + Pull request review
-* Repository contents - ReadWrite
- + No webhook
+::
+
+    Commit statuses - ReadOnly
+
+      [x] Status
+
+    Pull requests - ReadWrite
+
+      [x] Pull request
+      [x] Pull request review
+      [x] Pull request review comment
+
+    Repository contents - ReadWrite
+
+      No webook
 
 
 Heroku Setup
