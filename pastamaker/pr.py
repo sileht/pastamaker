@@ -17,6 +17,7 @@
 import functools
 import logging
 import time
+import re
 
 import github
 
@@ -29,7 +30,8 @@ LOG = logging.getLogger(__name__)
 def pretty(self):
     return "%s/%s/pull/%s@%s (%s, %s)" % (
         self.base.user.login, self.base.repo.name,
-        self.number, self.base.ref, self.mergeable_state, self.approvals)
+        self.number, self.base.ref, self.mergeable_state or "none",
+        self.approvals)
 
 
 @property
@@ -45,6 +47,9 @@ def approvals(self):
         def get_users(users, review):
             if review.user.id not in allowed:
                 return users
+
+            if re.search("@pastamaker.*fast merge", review.body.lower()):
+                return 42
 
             if review.state == 'APPROVED':
                 users.add(review.user.login)
