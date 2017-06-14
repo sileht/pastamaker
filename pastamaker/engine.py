@@ -162,8 +162,7 @@ class PastaMakerEngine(object):
                 # Next step is status event
 
             elif data["action"] == "closed":
-                # We just want to check if someone close the PR without
-                # merging it
+                # We just want to check if someone close the PR
                 self.find_next_pull_to_merge(incoming_pull.base.ref)
 
     def handle_pull_request_review(self, incoming_pull, data):
