@@ -201,7 +201,6 @@ class PastaMakerEngine(object):
             if p.mergeable_state == "clean":
                 if p.pastamaker_merge():
                     LOG.info("%s merged", p.pretty())
-                    return
 
             # Have CI ok, at least 1 approval, but branch need to be updated
             elif p.mergeable_state == "behind":
