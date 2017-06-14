@@ -7,14 +7,16 @@ pastamaker
     :alt: Build Status
 
 pastamaker is a Github App to automatically manage Pull Requests
-"branch update" and "merge" when this one have 2 reviewer approvals.
+"branch update" and "merge" when this one have 2 reviewer approvals
+
+Anything catchng "@pastamaker.*fast merge" will bypass the required approvals.
 
 It's currently used by `gnocchixyz projects <https://github.com/gnocchixyz>`_, the app name is 'pastamaker'.
 
 Github App Settings
 ===================
 
-You should obviosult replace https://<app-name>.herokuapp.com by the url where you host the application.
+You should obviously replace https://<app-name>.herokuapp.com by the url where you host the application.
 
 General
 -------

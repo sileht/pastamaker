@@ -14,7 +14,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import functools
 import logging
 import time
 import re
@@ -44,28 +43,29 @@ def approvals(self):
     if not hasattr(self, "_pastamaker_approvals"):
         allowed = [u.id for u in self.base.repo.get_collaborators()]
 
-        def get_users(users, review):
+        users = set()
+        fast_merge = False
+        for review in self.get_reviews():
             if review.user.id not in allowed:
-                return users
-
-            if re.search("@pastamaker.*fast merge", review.body.lower()):
-                return 42
-
-            if review.state == 'APPROVED':
+                continue
+            elif review.state == 'APPROVED':
+                if re.search("@pastamaker.*fast merge", review.body.lower()):
+                    fast_merge = True
                 users.add(review.user.login)
             elif review.state in ["DISMISSED", "CHANGES_REQUESTED"]:
                 if review.user.login in users:
                     users.remove(review.user.login)
+                    fast_merge = False
             elif review.state == 'COMMENTED':
                 pass
             else:
                 LOG.error("%s FIXME review state unhandled: %s",
                           self.pretty(), review.state)
-            return users
 
-        # Reviews are in chronological order
-        users = functools.reduce(get_users, self.get_reviews(), set())
-        self._pastamaker_approvals = len(users)
+        if fast_merge and len(users) >= 1:
+            self._pastamaker_approvals = 42
+        else:
+            self._pastamaker_approvals = len(users)
     return self._pastamaker_approvals
 
 
