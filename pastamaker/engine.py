@@ -89,9 +89,9 @@ class PastaMakerEngine(object):
         self._r = repo
         self.pending_pulls = PendingPulls(self._r)
 
-    def _get_logprefix(self, branch="?????"):
+    def _get_logprefix(self, branch="<unknown>"):
         return (self._u.login + "/" + self._r.name +
-                "/pull/??@" + branch + " (?? / ??)")
+                "/pull/?@" + branch + " (?, ?)")
 
     def log_formated_event(self, event_type, incoming_pull, data):
         if event_type == "pull_request":

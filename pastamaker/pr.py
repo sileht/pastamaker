@@ -29,7 +29,7 @@ LOG = logging.getLogger(__name__)
 def pretty(self):
     return "%s/%s/pull/%s@%s (%s, %s)" % (
         self.base.user.login, self.base.repo.name,
-        self.number, self.base.ref, self.mergeable_state, self.approved)
+        self.number, self.base.ref, self.mergeable_state, self.approvals)
 
 
 @property
@@ -38,8 +38,8 @@ def mergeable_state_computed(self):
 
 
 @property
-def approved(self):
-    if not hasattr(self, "_pastamaker_approved"):
+def approvals(self):
+    if not hasattr(self, "_pastamaker_approvals"):
         allowed = [u.id for u in self.base.repo.get_collaborators()]
 
         def get_users(users, review):
@@ -60,8 +60,13 @@ def approved(self):
 
         # Reviews are in chronological order
         users = functools.reduce(get_users, self.get_reviews(), set())
-        self._pastamaker_approved = len(users) >= config.REQUIRED_APPROVALS
-    return self._pastamaker_approved
+        self._pastamaker_approvals = len(users)
+    return self._pastamaker_approvals
+
+
+@property
+def approved(self):
+    return self.approvals >= config.REQUIRED_APPROVALS
 
 
 @property
@@ -100,7 +105,7 @@ def pastamaker_priority(self):
 def pastamaker_update(self, force=False):
     for attr in ["_pastamaker_priority",
                  "_pastamaker_ci_status",
-                 "_pastamaker_approved"]:
+                 "_pastamaker_approvals"]:
         if hasattr(self, attr):
             delattr(self, attr)
 
@@ -165,6 +170,7 @@ def monkeypatch_github():
     p.pretty = pretty
     p.mergeable_state_computed = mergeable_state_computed
     p.approved = approved
+    p.approvals = approvals
     p.ci_status = ci_status
     p.pastamaker_update = pastamaker_update
     p.pastamaker_merge = pastamaker_merge
