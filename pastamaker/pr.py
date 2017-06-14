@@ -15,8 +15,8 @@
 # under the License.
 
 import logging
-import time
 import re
+import time
 
 import github
 
