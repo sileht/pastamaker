@@ -192,6 +192,8 @@ class PastaMakerEngine(object):
         """
         LOG.info("%s, processing...", p.pretty())
 
+        # NOTE(sileht): This also refresh the PR, following code expects the
+        # mergeable_state is up2date
         self.pending_pulls.add(p)
 
         if p.approved:
