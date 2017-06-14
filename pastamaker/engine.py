@@ -73,7 +73,7 @@ class PendingPulls(dict):
             LOG.info("%s expected, sha %s", p.pretty(), p.head.sha)
 
     def add(self, p):
-        p.refresh(force=True)
+        p.pastamaker_update(force=True)
         serialized = json.dumps((p.raw_headers, p.raw_data))
         self._conn.set(self._ident + p.base.ref, serialized)
         self[p.base.ref] = p
@@ -174,7 +174,7 @@ class PastaMakerEngine(object):
 
         elif (data["action"] == "submitted"
               and data["review"]["state"] == "approved"
-              and p.approved()):
+              and p.approved):
             # A PR got approvals, let's see if we can merge it
             self.proceed_pull_or_find_next(p)
 
@@ -191,7 +191,7 @@ class PastaMakerEngine(object):
 
         self.pending_pulls.add(p)
 
-        if p.approved():
+        if p.approved:
             # Everything looks good
             if p.mergeable_state == "clean":
                 if p.pastamaker_merge():
@@ -240,7 +240,7 @@ class PastaMakerEngine(object):
         sort_key = operator.attrgetter('pastamaker_priority', 'created_at')
 
         pulls = self._r.get_pulls(sort="created", direction="asc", base=branch)
-        pulls = six.moves.map(lambda p: p.refresh(), pulls)
+        pulls = six.moves.map(lambda p: p.pastamaker_update(), pulls)
         pulls = list(filter(lambda p: p.pastamaker_priority >= 0,
                             sorted(pulls, key=sort_key, reverse=True)))
         if pulls:

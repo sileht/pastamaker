@@ -32,51 +32,91 @@ def pretty(self):
         self.number, self.base.ref, self.mergeable_state)
 
 
-def mergeable_state_is_valid(self):
+@property
+def mergeable_state_computed(self):
     return self.mergeable_state not in ["unknown", None]
 
 
-def refresh(self, force=False):
-    if hasattr(self, "_pastamaker_priority"):
-        delattr(self, "_pastamaker_priority")
+@property
+def approved(self):
+    if not hasattr(self, "_pastamaker_approved"):
+        allowed = [u.id for u in self.base.repo.get_collaborators()]
 
-    if not force and self.mergeable_state_is_valid():
+        def get_users(users, review):
+            if review.user.id not in allowed:
+                return users
+
+            if review.state == 'APPROVED':
+                users.add(review.user.login)
+            elif review.state in ["DISMISSED", "CHANGES_REQUESTED"]:
+                if review.user.login in users:
+                    users.remove(review.user.login)
+            elif review.state == 'COMMENTED':
+                pass
+            else:
+                LOG.error("%s FIXME review state unhandled: %s",
+                          self.pretty(), review.state)
+            return users
+
+        # Reviews are in chronological order
+        users = functools.reduce(get_users, self.get_reviews(), set())
+        self._pastamaker_approved = len(users) >= config.REQUIRED_APPROVALS
+    return self._pastamaker_approved
+
+
+@property
+def ci_status(self):
+    # Only work for PR with less than 250 commites
+    if not hasattr(self, "_pastamaker_ci_status"):
+        self._pastamaker_ci_status = (list(self.get_commits())
+                                      [-1].get_combined_status().state)
+    return self._pastamaker_ci_status
+
+
+@property
+def pastamaker_priority(self):
+    if not hasattr(self, "_pastamaker_priority"):
+        if not self.approved:
+            priority = -1
+        elif self.mergeable_state == "clean":
+            # Best PR ever
+            priority = 10
+        elif (self.mergeable_state == "blocked"
+              and self.ci_status == "pending"
+              and self.update_branch_state == "clean"):
+            # Maybe clean soon, so keep it if we can rebase
+            priority = 7
+        elif (self.mergeable_state == "behind"
+              and self.ci_status == "success"
+              and self.update_branch_state not in ["unknown", "dirty"]):
+            # Not up2date, but ready to merge, is branch updatable
+            priority = 5
+        else:
+            priority = -1
+        setattr(self, "_pastamaker_priority", priority)
+    return self._pastamaker_priority
+
+
+def pastamaker_update(self, force=False):
+    for attr in ["_pastamaker_priority",
+                 "_pastamaker_ci_status",
+                 "_pastamaker_approved"]:
+        if hasattr(self, attr):
+            delattr(self, attr)
+
+    if not force and self.mergeable_state_computed:
         return self
 
     # Github is currently processing this PR, we wait the completion
     while True:
         LOG.info("%s, refreshing...", self.pretty())
         self.update()
-        if self.mergeable_state_is_valid():
+        if self.mergeable_state_computed:
             break
         time.sleep(0.42)  # you known, this one always work
 
     LOG.info("%s, refreshed", self.pretty())
     return self
-
-
-def approved(self):
-    allowed = [u.id for u in self.base.repo.get_collaborators()]
-
-    def get_users(users, review):
-        if review.user.id not in allowed:
-            return users
-
-        if review.state == 'APPROVED':
-            users.add(review.user.login)
-        elif review.state in ["DISMISSED", "CHANGES_REQUESTED"]:
-            if review.user.login in users:
-                users.remove(review.user.login)
-        elif review.state == 'COMMENTED':
-            pass
-        else:
-            LOG.error("%s FIXME review state unhandled: %s",
-                      self.pretty(), review.state)
-        return users
-
-    # Reviews are in chronological order
-    users = functools.reduce(get_users, self.get_reviews(), set())
-    return len(users) >= config.REQUIRED_APPROVALS
 
 
 def pastamaker_merge(self, **post_parameters):
@@ -111,34 +151,6 @@ def pastamaker_merge(self, **post_parameters):
         # to repoduce the issue
 
 
-def ci_status(self):
-    # Only work for PR with less than 250 commites
-    return list(self.get_commits())[-1].get_combined_status().state
-
-
-def pastamaker_priority(self):
-    if not hasattr(self, "_pastamaker_priority"):
-        if not self.approved():
-            priority = -1
-        elif self.mergeable_state == "clean":
-            # Best PR ever
-            priority = 10
-        elif (self.mergeable_state == "blocked"
-              and self.ci_status == "pending"
-              and self.update_branch_state == "clean"):
-            # Maybe clean soon, so keep it if we can rebase
-            priority = 7
-        elif (self.mergeable_state == "behind"
-              and self.ci_status == "success"
-              and self.update_branch_state not in ["unknown", "dirty"]):
-            # Not up2date, but ready to merge, is branch updatable
-            priority = 5
-        else:
-            priority = -1
-        setattr(self, "_pastamaker_priority", priority)
-    return self._pastamaker_priority
-
-
 def from_event(repo, data):
     # TODO(sileht): do it only once in handle()
     # NOTE(sileht): Convert event payload, into pygithub object
@@ -151,13 +163,13 @@ def from_event(repo, data):
 def monkeypatch_github():
     p = github.PullRequest.PullRequest
     p.pretty = pretty
-    p.mergeable_state_is_valid = mergeable_state_is_valid
-    p.refresh = refresh
+    p.mergeable_state_computed = mergeable_state_computed
     p.approved = approved
-    p.ci_status = property(ci_status)
+    p.ci_status = ci_status
+    p.pastamaker_update = pastamaker_update
     p.pastamaker_merge = pastamaker_merge
-    p.pastamaker_priority = property(pastamaker_priority)
+    p.pastamaker_priority = pastamaker_priority
 
     # Missing Github API
     p.update_branch = webhack.web_github_update_branch
-    p.update_branch_state = property(webhack.web_github_branch_status)
+    p.update_branch_state = webhack.web_github_branch_status
