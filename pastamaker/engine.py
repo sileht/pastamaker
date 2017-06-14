@@ -89,28 +89,32 @@ class PastaMakerEngine(object):
         self._r = repo
         self.pending_pulls = PendingPulls(self._r)
 
-    def log_formated_event(self, event_type, data):
-        p_info = "%s/%s#??@%s (??)" % (data["repository"]["owner"]["login"],
-                                       data["repository"]["name"], "%s")
+    def _get_logprefix(self, branch="?????"):
+        return (self._u.login + "/" + self._r.name +
+                "/pull/??@" + branch + " (?? / ??)")
 
+    def log_formated_event(self, event_type, incoming_pull, data):
         if event_type == "pull_request":
-            p_info = pr.from_event(self._r, data).pretty()
+            p_info = incoming_pull.pretty()
             extra = "action: %s" % data["action"]
 
         elif event_type == "pull_request_review":
-            p_info = pr.from_event(self._r, data).pretty()
+            p_info = incoming_pull.pretty()
             extra = "action: %s, review-state: %s" % (data["action"],
                                                       data["review"]["state"])
 
         elif event_type == "status":
-            p_info = p_info % "?????"
+            p_info = self._get_logprefix()
             extra = "ci-status: %s, sha: %s" % (data["state"], data["sha"])
 
         elif event_type == "refresh":
-            p_info = p_info % data["branch"]
+            p_info = self._get_logprefix(data["branch"])
             extra = ""
         else:
-            p_info = p_info % "?????"
+            if incoming_pull:
+                p_info = incoming_pull.pretty()
+            else:
+                p_info = self._get_logprefix()
             extra = " ignored"
 
         LOG.info("%s - got event '%s' - %s", p_info, event_type, extra)
@@ -118,21 +122,23 @@ class PastaMakerEngine(object):
     def handle(self, event_type, data):
         # Everything start here
 
-        self.log_formated_event(event_type, data)
+        incoming_pull = pr.from_event(self._r, data)
+
+        self.log_formated_event(event_type, incoming_pull, data)
         self.pending_pulls.log()
 
         handler = getattr(self, "handle_%s" % event_type)
         if handler:
-            handler(data)
+            handler(incoming_pull, data)
 
-    def handle_refresh(self, data):
+    def handle_refresh(self, incoming_pull, data):
         pending_pull = self.pending_pulls.get(data["branch"])
         if pending_pull:
             self.proceed_pull_or_find_next(pending_pull)
         else:
             self.find_next_pull_to_merge(data["branch"])
 
-    def handle_status(self, data):
+    def handle_status(self, incoming_pull, data):
         # NOTE(sileht): We care only about success or failure state
         if data["state"] == "pending":
             return
@@ -142,41 +148,38 @@ class PastaMakerEngine(object):
                 self.proceed_pull_or_find_next(p)
                 return
 
-    def handle_pull_request(self, data):
-        p = pr.from_event(self._r, data)
-
-        pending_pull = self.pending_pulls.get(p.base.ref)
+    def handle_pull_request(self, incoming_pull, data):
+        pending_pull = self.pending_pulls.get(incoming_pull.base.ref)
         if not pending_pull:
             # NOTE(sileht): If we are not waiting for any pull request
             # we don't care
             return
 
-        if p.number == pending_pull.number:
+        if incoming_pull.number == pending_pull.number:
             if data["action"] == "synchronize":
                 # Base branch have been merged into the PR
-                self.pending_pulls.add(p)
+                self.pending_pulls.add(incoming_pull)
                 # Next step is status event
 
             elif data["action"] == "closed":
                 # We just want to check if someone close the PR without
                 # merging it
-                self.find_next_pull_to_merge(pending_pull.base.ref)
+                self.find_next_pull_to_merge(incoming_pull.base.ref)
 
-    def handle_pull_request_review(self, data):
-        p = pr.from_event(self._r, data)
+    def handle_pull_request_review(self, incoming_pull, data):
 
-        pending_pull = self.pending_pulls.get(p.base.ref)
+        pending_pull = self.pending_pulls.get(incoming_pull.base.ref)
         if pending_pull:
             # Our ready PR have been changed, check if
             # we can still merge it or to pick another one
-            if p.number == pending_pull.number:
-                self.proceed_pull_or_find_next(p)
+            if incoming_pull.number == pending_pull.number:
+                self.proceed_pull_or_find_next(incoming_pull)
 
         elif (data["action"] == "submitted"
               and data["review"]["state"] == "approved"
-              and p.approved):
+              and incoming_pull.approved):
             # A PR got approvals, let's see if we can merge it
-            self.proceed_pull_or_find_next(p)
+            self.proceed_pull_or_find_next(incoming_pull)
 
     ###########################
     # Start machine goes here #
@@ -231,9 +234,8 @@ class PastaMakerEngine(object):
                      p.created_at, p.base.sha, p.head.sha)
 
     def find_next_pull_to_merge(self, branch):
-        log_prefix = (self._u.login + "/" + self._r.name +
-                      "#??@" + branch + " (??)")
-        LOG.info("%s, looking for pull requests mergeable", log_prefix)
+        LOG.info("%s, looking for pull requests mergeable",
+                 self._get_logprefix(branch))
 
         self.pending_pulls.clear(branch)
 
@@ -246,4 +248,5 @@ class PastaMakerEngine(object):
         if pulls:
             self.dump_pulls_state(pulls)
             self.proceed_pull_or_find_next(pulls[0])
-        LOG.info("%s, %s pull request(s) mergeable" % (log_prefix, len(pulls)))
+        LOG.info("%s, %s pull request(s) mergeable" %
+                 (self._get_logprefix(branch), len(pulls)))

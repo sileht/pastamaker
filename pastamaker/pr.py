@@ -27,9 +27,9 @@ LOG = logging.getLogger(__name__)
 
 
 def pretty(self):
-    return "%s/%s#%s@%s (%s)" % (
+    return "%s/%s/pull/%s@%s (%s, %s)" % (
         self.base.user.login, self.base.repo.name,
-        self.number, self.base.ref, self.mergeable_state)
+        self.number, self.base.ref, self.mergeable_state, self.approved)
 
 
 @property
@@ -155,9 +155,9 @@ def from_event(repo, data):
     # TODO(sileht): do it only once in handle()
     # NOTE(sileht): Convert event payload, into pygithub object
     # instead of querying the API
-    return github.PullRequest.PullRequest(repo._requester, {},
-                                          data["pull_request"],
-                                          completed=True)
+    if "pull_request" in data:
+        return github.PullRequest.PullRequest(
+            repo._requester, {}, data["pull_request"], completed=True)
 
 
 def monkeypatch_github():
