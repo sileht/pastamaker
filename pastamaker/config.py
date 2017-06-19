@@ -16,17 +16,22 @@
 
 
 import os
+import yaml
+
+with open("config.yml") as f:
+    REQUIRED_APPROVALS_CONFIG = f.read()
 
 _CONFIG = {
     "INTEGRATION_ID": None,
     "PRIVATE_KEY": None,
     "WEBHOOK_SECRET": None,
-    "REQUIRED_APPROVALS": 2,
     "WEBHACK_USERNAME": None,
     "WEBHACK_PASSWORD": None,
     "DEBUG": False,
     "BASE_URL": None,
     "FLUSH_REDIS_ON_STARTUP": False,
+    "REQUIRED_APPROVALS_DEFAULT": 2,
+    "REQUIRED_APPROVALS": dict(yaml.load(REQUIRED_APPROVALS_CONFIG)),
 }
 
 print("**********************************************************")

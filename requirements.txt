@@ -7,3 +7,4 @@ redis
 rq
 gunicorn
 six
+pyyaml

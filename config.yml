@@ -1,0 +1,4 @@
+---
+default: 1
+-@master: 2
+gnocchixyz/tools-tester@test: 1

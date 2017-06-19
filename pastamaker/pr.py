@@ -71,7 +71,15 @@ def approvals(self):
 
 @property
 def approved(self):
-    return self.approvals >= config.REQUIRED_APPROVALS
+    repo = self.base.repo.full_name
+    branch = self.base.ref
+    for name in ["%s@%s" % (repo, branch), repo, "-@%s" % branch, "default"]:
+        if name in config.REQUIRED_APPROVALS:
+            required = int(config.REQUIRED_APPROVALS[name])
+            break
+    else:
+        required = int(config.REQUIRED_APPROVALS_DEFAULT)
+    return self.approvals >= required
 
 
 @property
