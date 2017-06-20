@@ -63,7 +63,6 @@ Heroku Setup
         PASTAMAKER_INTEGRATION_ID=XXXX \
         PASTAMAKER_WEBHOOK_SECRET="<webhook_secret>" \
         PASTAMAKER_PRIVATE_KEY="$(cat <path to the private key>)" \
-        PASTAMAKER_REQUIRED_APPROVALS=2 \
         PASTAMAKER_BASE_URL="https://<app-name>.herokuapp.com" \
         PASTAMAKER_WEBHACK_USERNAME="<app-name>-bot" \
         PASTAMAKER_WEBHACK_PASSWORD="<password>"
