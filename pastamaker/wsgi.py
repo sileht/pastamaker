@@ -15,8 +15,10 @@
 # under the License.
 
 
+from pastamaker import pr
 from pastamaker import utils
 from pastamaker import web
 
 utils.setup_logging()
+pr.monkeypatch_github()
 application = web.app
