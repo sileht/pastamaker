@@ -93,8 +93,7 @@ class PastaMakerEngine(object):
 
         incoming_pull = pr.from_event(self._r, data)
         if not incoming_pull and event_type == "status":
-            issues = list(self._g.search_issues("is:pr is:open %s" %
-                                                data["sha"]))
+            issues = list(self._g.search_issues("is:pr %s" % data["sha"]))
             if len(issues) >= 1:
                 incoming_pull = self._r.get_pull(issues[0].number)
 
