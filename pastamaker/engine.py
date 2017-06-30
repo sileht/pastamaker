@@ -154,16 +154,16 @@ class PastaMakerEngine(object):
         # mergeable_state is up2date
 
         if p.approved:
+            if p.ci_status == "pending":
+                LOG.info("%s wating for CI completion", p.pretty())
+                return
+
             # Everything looks good
-            if p.mergeable_state == "clean":
+            elif p.mergeable_state == "clean":
                 if p.pastamaker_merge():
                     LOG.info("%s merged", p.pretty())
                     # Wait for the closed event
                     return
-
-            elif p.ci_status == "pending":
-                LOG.info("%s wating for CI completion", p.pretty())
-                return
 
             # Have CI ok, at least 1 approval, but branch need to be updated
             elif p.mergeable_state == "behind":
@@ -182,13 +182,17 @@ class PastaMakerEngine(object):
                             p.pretty())
 
         if len(queues) >= 2:
+            self.set_cache_queues(queues[0].base.ref, queues[1:])
             self.proceed_queues(queues[1:])
+        else:
+            self.set_cache_queues(queues[0].base.ref, [])
 
-    def dump_pulls_state(self, branch, pulls):
+    def set_cache_queues(self, branch, pulls):
         self._redis.set(
             "queues-%s-%s-%s" % (self._u.login, self._r.name, branch),
             ujson.dumps([p.raw_data for p in pulls]))
 
+    def dump_pulls_state(self, branch, pulls):
         for p in pulls:
             LOG.info("%s, %s, %s, base-sha: %s, head-sha: %s)",
                      p.pretty(), p.ci_status,
@@ -204,6 +208,7 @@ class PastaMakerEngine(object):
         pulls = six.moves.map(lambda p: p.pastamaker_update(), pulls)
         pulls = list(filter(lambda p: p.pastamaker_priority >= 0,
                             sorted(pulls, key=sort_key, reverse=True)))
+        self.set_cache_queues(branch, pulls)
         self.dump_pulls_state(branch, pulls)
         LOG.info("%s, %s pull request(s) mergeable" %
                  (self._get_logprefix(branch), len(pulls)))
