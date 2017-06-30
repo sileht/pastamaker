@@ -114,8 +114,10 @@ def pastamaker_priority(self):
             # Not up2date, but ready to merge, is branch updatable
             if self.ci_status == "success":
                 priority = 7
-            else:
+            elif self.ci_status == "pending":
                 priority = 5
+            else:
+                priority = -1
         else:
             priority = -1
         setattr(self, "_pastamaker_priority", priority)
