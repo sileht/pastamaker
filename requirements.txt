@@ -8,3 +8,4 @@ rq
 gunicorn
 six
 pyyaml
+ujson

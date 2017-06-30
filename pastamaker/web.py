@@ -15,11 +15,18 @@
 # under the License.
 
 import hmac
+from httplib import HTTPSConnection
 import logging
 
 import flask
+import github
+from github import GithubException
 import rq
+import six
+import ujson
 
+from pastamaker import config
+from pastamaker import engine
 from pastamaker import utils
 from pastamaker import worker
 
@@ -63,6 +70,71 @@ def force_refresh(installation_id, owner, repo, branch):
     }
     get_queue().enqueue(worker.event_handler, "refresh", data)
     return "", 202
+
+
+def get_installations(integration):
+    # FIXME(sileht): Need to be in github libs
+    conn = HTTPSConnection("api.github.com")
+    conn.request(
+        method="GET",
+        url="/app/installations",
+        headers={
+            "Authorization": "Bearer {}".format(integration.create_jwt()),
+            "Accept": "application/vnd.github.machine-man-preview+json",
+            "User-Agent": "PyGithub/Python"
+        },
+    )
+    response = conn.getresponse()
+    response_text = response.read()
+    if six.PY3:
+        response_text = response_text.decode('utf-8')
+    conn.close()
+
+    if response.status == 200:
+        return ujson.loads(response_text)
+    elif response.status == 403:
+        raise GithubException.BadCredentialsException(
+            status=response.status,
+            data=response_text
+        )
+    elif response.status == 404:
+        raise GithubException.UnknownObjectException(
+            status=response.status,
+            data=response_text
+        )
+    raise GithubException.GithubException(
+        status=response.status,
+        data=response_text
+    )
+
+
+@app.route("/queue/<owner>/<repo>/<path:branch>")
+def queue(owner, repo, branch):
+    integration = github.GithubIntegration(config.INTEGRATION_ID,
+                                           config.PRIVATE_KEY)
+
+    installations = get_installations(integration)
+    for install in installations:
+        if install["account"]["login"] == owner:
+            installation_id = install["id"]
+            break
+    else:
+        flask.abort(404, "%s have not installed pastamaker" % owner)
+
+    token = integration.get_access_token(installation_id).token
+    g = github.Github(token)
+    user = g.get_user(owner)
+    repo = user.get_repo(repo)
+
+    e = engine.PastaMakerEngine(g, user, repo)
+    try:
+        pulls = e.get_pull_requests_queue(branch)
+    except GithubException as e:
+        if e.status == 403:
+            flask.abort(404, "%s have not installed pastamaker" % owner)
+        raise
+
+    return ujson.dumps([p.raw_data for p in pulls])
 
 
 @app.route("/event", methods=["POST"])

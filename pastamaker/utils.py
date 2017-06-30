@@ -19,7 +19,7 @@ import hmac
 import logging
 import os
 import sys
-import urlparse
+from six.moves import urllib_parse as urlparse
 
 import daiquiri
 import redis

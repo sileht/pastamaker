@@ -234,6 +234,11 @@ class PastaMakerEngine(object):
                      p.created_at, p.base.sha, p.head.sha)
 
     def find_next_pull_to_merge(self, branch):
+        pulls = self.get_pull_requests_queue(branch)
+        if pulls:
+            self.proceed_pull_or_find_next(pulls[0])
+
+    def get_pull_requests_queue(self, branch):
         LOG.info("%s, looking for pull requests mergeable",
                  self._get_logprefix(branch))
 
@@ -247,6 +252,6 @@ class PastaMakerEngine(object):
                             sorted(pulls, key=sort_key, reverse=True)))
         if pulls:
             self.dump_pulls_state(pulls)
-            self.proceed_pull_or_find_next(pulls[0])
         LOG.info("%s, %s pull request(s) mergeable" %
                  (self._get_logprefix(branch), len(pulls)))
+        return pulls
