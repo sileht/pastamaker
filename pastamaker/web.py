@@ -127,6 +127,7 @@ def queue(owner, repo, branch):
     repo = user.get_repo(repo)
 
     e = engine.PastaMakerEngine(g, user, repo)
+    pending = e.pending_pulls[branch]
     try:
         pulls = e.get_pull_requests_queue(branch)
     except GithubException as e:
@@ -134,6 +135,8 @@ def queue(owner, repo, branch):
             flask.abort(404, "%s have not installed pastamaker" % owner)
         raise
 
+    pulls = [p for p in pulls if p.number != pending.number]
+    pulls.insert(0, pending)
     return ujson.dumps([p.raw_data for p in pulls])
 
 
