@@ -117,6 +117,9 @@ def pastamaker_priority(self):
         else:
             priority = -1
         setattr(self, "_pastamaker_priority", priority)
+        LOG.info("%s prio: %s, %s, %s, %s, %s", self.pretty(), priority,
+                 self.approved, self.mergeable_state, self.ci_status,
+                 self.update_branch_state)
     return self._pastamaker_priority
 
 
