@@ -19,12 +19,9 @@ import logging
 
 import flask
 import github
-from github import GithubException
 import rq
-import ujson
 
 from pastamaker import config
-from pastamaker import engine
 from pastamaker import utils
 from pastamaker import worker
 
@@ -34,10 +31,16 @@ LOG = logging.getLogger(__name__)
 app = flask.Flask(__name__)
 
 
+def get_redis():
+    if not hasattr(flask.g, 'redis'):
+        conn = utils.get_redis()
+        flask.g.redis = conn
+    return flask.g.redis
+
+
 def get_queue():
     if not hasattr(flask.g, 'rq_queue'):
-        conn = utils.get_redis()
-        flask.g.rq_queue = rq.Queue(connection=conn)
+        flask.g.rq_queue = rq.Queue(connection=get_redis())
     return flask.g.rq_queue
 
 
@@ -79,27 +82,7 @@ def force_refresh(owner, repo, branch):
 
 @app.route("/queue/<owner>/<repo>/<path:branch>")
 def queue(owner, repo, branch):
-    integration = github.GithubIntegration(config.INTEGRATION_ID,
-                                           config.PRIVATE_KEY)
-
-    installation_id = utils.get_installation_id(integration, owner)
-    if not installation_id:
-        flask.abort(404, "%s have not installed pastamaker" % owner)
-
-    token = integration.get_access_token(installation_id).token
-    g = github.Github(token)
-    user = g.get_user(owner)
-    repo = user.get_repo(repo)
-
-    e = engine.PastaMakerEngine(g, user, repo)
-    try:
-        pulls = e.get_pull_requests_queue(branch)
-    except GithubException as e:
-        if e.status == 403:
-            flask.abort(404, "%s have not installed pastamaker" % owner)
-        raise
-
-    return ujson.dumps([p.raw_data for p in pulls])
+    return get_redis().get("queues-%s-%s-%s" % (owner, repo, branch))
 
 
 @app.route("/event", methods=["POST"])

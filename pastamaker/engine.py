@@ -18,8 +18,10 @@ import logging
 import operator
 
 import six.moves
+import ujson
 
 from pastamaker import pr
+from pastamaker import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -54,6 +56,7 @@ class PastaMakerEngine(object):
         self._g = g
         self._u = user
         self._r = repo
+        self._redis = utils.get_redis()
 
     def _get_logprefix(self, branch="<unknown>"):
         return (self._u.login + "/" + self._r.name +
@@ -179,7 +182,11 @@ class PastaMakerEngine(object):
         if len(queues) >= 2:
             self.proceed_queues(queues[1:])
 
-    def dump_pulls_state(self, pulls):
+    def dump_pulls_state(self, branch, pulls):
+        self._redis.set(
+            "queues-%s-%s-%s" % (self._u.login, self._r.name, branch),
+            ujson.dumps([p.raw_data for p in pulls]))
+
         for p in pulls:
             LOG.info("%s, %s, %s, base-sha: %s, head-sha: %s)",
                      p.pretty(), p.ci_status,
@@ -195,8 +202,7 @@ class PastaMakerEngine(object):
         pulls = six.moves.map(lambda p: p.pastamaker_update(), pulls)
         pulls = list(filter(lambda p: p.pastamaker_priority >= 0,
                             sorted(pulls, key=sort_key, reverse=True)))
-        if pulls:
-            self.dump_pulls_state(pulls)
+        self.dump_pulls_state(branch, pulls)
         LOG.info("%s, %s pull request(s) mergeable" %
                  (self._get_logprefix(branch), len(pulls)))
         return pulls
