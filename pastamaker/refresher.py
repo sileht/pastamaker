@@ -27,11 +27,11 @@ from pastamaker import utils
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Force refresh of pastamker'
+        description='Force refresh of pastamaker'
     )
     parser.add_argument(
         "slug", nargs="+",
-        help="<installation_id>/<owner>/<repo>/<branch>")
+        help="<owner>/<repo>/<branch>")
 
     base_url = config.BASE_URL
     args = parser.parse_args()

@@ -16,13 +16,17 @@
 
 import hashlib
 import hmac
+from httplib import HTTPSConnection
 import logging
 import os
 import sys
-from six.moves import urllib_parse as urlparse
 
 import daiquiri
+from github import GithubException
 import redis
+import ujson
+import six
+from six.moves import urllib_parse as urlparse
 
 from pastamaker import config
 
@@ -60,3 +64,46 @@ def setup_logging():
 def compute_hmac(data):
     mac = hmac.new(config.WEBHOOK_SECRET, msg=data, digestmod=hashlib.sha1)
     return str(mac.hexdigest())
+
+
+def get_installations(integration):
+    # FIXME(sileht): Need to be in github libs
+    conn = HTTPSConnection("api.github.com")
+    conn.request(
+        method="GET",
+        url="/app/installations",
+        headers={
+            "Authorization": "Bearer {}".format(integration.create_jwt()),
+            "Accept": "application/vnd.github.machine-man-preview+json",
+            "User-Agent": "PyGithub/Python"
+        },
+    )
+    response = conn.getresponse()
+    response_text = response.read()
+    if six.PY3:
+        response_text = response_text.decode('utf-8')
+    conn.close()
+
+    if response.status == 200:
+        return ujson.loads(response_text)
+    elif response.status == 403:
+        raise GithubException.BadCredentialsException(
+            status=response.status,
+            data=response_text
+        )
+    elif response.status == 404:
+        raise GithubException.UnknownObjectException(
+            status=response.status,
+            data=response_text
+        )
+    raise GithubException.GithubException(
+        status=response.status,
+        data=response_text
+    )
+
+
+def get_installation_id(integration, owner):
+    installations = get_installations(integration)
+    for install in installations:
+        if install["account"]["login"] == owner:
+            return install["id"]
