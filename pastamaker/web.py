@@ -82,7 +82,7 @@ def force_refresh(owner, repo, branch):
 
 @app.route("/queue/<owner>/<repo>/<path:branch>")
 def queue(owner, repo, branch):
-    return get_redis().get("queues-%s-%s-%s" % (owner, repo, branch))
+    return get_redis().get("queues-%s-%s-%s" % (owner, repo, branch)) or "[]"
 
 
 @app.route("/event", methods=["POST"])
