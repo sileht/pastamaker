@@ -1,4 +1,5 @@
 ---
 default: 1
 -@master: 2
-gnocchixyz/tools-tester@test: 1
+gnocchixyz/tools-tester: 1
+gnocchixyz/tools-tester@mater: 1
