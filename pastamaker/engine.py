@@ -151,16 +151,11 @@ class PastaMakerEngine(object):
     def handle_pull_request(self, incoming_pull, data):
         pending_pull = self.pending_pulls.get(incoming_pull.base.ref)
 
-        if not pending_pull:
-            if data["action"] == "closed":
-                # We just want to check if someone close the PR
-                self.find_next_pull_to_merge(incoming_pull.base.ref)
-            else:
-                # NOTE(sileht): If we are not waiting for any pull request
-                # we don't care
-                return
+        if not pending_pull and data["action"] == "closed":
+            # We just want to check if someone close the PR
+            self.find_next_pull_to_merge(incoming_pull.base.ref)
 
-        if incoming_pull.number == pending_pull.number:
+        elif incoming_pull.number == pending_pull.number:
             if data["action"] == "synchronize":
                 # Base branch have been merged into the PR
                 self.pending_pulls.add(incoming_pull)
