@@ -112,7 +112,7 @@ class PastaMakerEngine(object):
             LOG.error("No pull request found in the event, ignoring")
             return
 
-        if event_type == "state" and data["state"] == "pending":
+        if event_type == "status" and data["state"] == "pending":
             # Don't compute the queue for nothing
             return
 
@@ -122,13 +122,19 @@ class PastaMakerEngine(object):
             LOG.info("Nothing queued, skipping the event")
             return
 
+        if event_type == "status":
+            # We got a failure or a success, maybe we have something to do
+            self.proceed_queues(queues)
+
         # Something change on our top PR
         if incoming_pull.number == queues[0].number:
             self.proceed_queues(queues)
+            return
 
         if event_type == "pull_request" and data["action"] == "closed":
             # A PR have been closed, process the queues
             self.proceed_queues(queues)
+            return
 
     ###########################
     # State machine goes here #
