@@ -155,6 +155,10 @@ class PastaMakerEngine(object):
                     # Wait for the closed event
                     return
 
+            elif p.ci_status == "pending":
+                LOG.info("%s wating for CI completion", p.pretty())
+                return
+
             # Have CI ok, at least 1 approval, but branch need to be updated
             elif p.mergeable_state == "behind":
                 if p.ci_status == "success":
@@ -163,14 +167,6 @@ class PastaMakerEngine(object):
                     if p.update_branch():
                         LOG.info("%s branch updated", p.pretty())
                         return
-
-            elif p.mergeable_state == "blocked":
-                # We need to check why it's blocked
-                if p.ci_status == "pending":
-                    # Let's wait the next status event
-                    LOG.info("%s wating for CI completion", p.pretty())
-                    return
-                # For other reason, we need to select another PR
 
             elif p.mergeable_state in ["unstable", "dirty", "ok"]:
                 LOG.info("%s, unmergable", p.pretty())
