@@ -110,10 +110,12 @@ def pastamaker_priority(self):
             # selected PR that we just rebase
             priority = 10
         elif (self.mergeable_state == "behind"
-              and self.ci_status == "success"
               and self.update_branch_state not in ["unknown", "dirty"]):
             # Not up2date, but ready to merge, is branch updatable
-            priority = 5
+            if self.ci_status == "success":
+                priority = 7
+            else:
+                priority = 5
         else:
             priority = -1
         setattr(self, "_pastamaker_priority", priority)
