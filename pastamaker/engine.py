@@ -150,10 +150,15 @@ class PastaMakerEngine(object):
 
     def handle_pull_request(self, incoming_pull, data):
         pending_pull = self.pending_pulls.get(incoming_pull.base.ref)
+
         if not pending_pull:
-            # NOTE(sileht): If we are not waiting for any pull request
-            # we don't care
-            return
+            if data["action"] == "closed":
+                # We just want to check if someone close the PR
+                self.find_next_pull_to_merge(incoming_pull.base.ref)
+            else:
+                # NOTE(sileht): If we are not waiting for any pull request
+                # we don't care
+                return
 
         if incoming_pull.number == pending_pull.number:
             if data["action"] == "synchronize":
@@ -200,6 +205,8 @@ class PastaMakerEngine(object):
             if p.mergeable_state == "clean":
                 if p.pastamaker_merge():
                     LOG.info("%s merged", p.pretty())
+                    # Wait for the closed event
+                    return
 
             # Have CI ok, at least 1 approval, but branch need to be updated
             elif p.mergeable_state == "behind":
