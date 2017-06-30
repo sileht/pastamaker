@@ -96,14 +96,19 @@ def pastamaker_priority(self):
     if not hasattr(self, "_pastamaker_priority"):
         if not self.approved:
             priority = -1
+        elif (self.mergeable_state == "clean"
+              and self.ci_status == "success"
+              and self.update_branch_state == "clean"):
+            # Best PR ever, up2date and CI OK
+            priority = 11
         elif self.mergeable_state == "clean":
-            # Best PR ever
             priority = 10
         elif (self.mergeable_state == "blocked"
               and self.ci_status == "pending"
               and self.update_branch_state == "clean"):
-            # Maybe clean soon, so keep it if we can rebase
-            priority = 7
+            # Maybe clean soon, or maybe this is the previous run
+            # selected PR that we just rebase
+            priority = 10
         elif (self.mergeable_state == "behind"
               and self.ci_status == "success"
               and self.update_branch_state not in ["unknown", "dirty"]):

@@ -14,15 +14,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import json
 import logging
 import operator
 
-import github
 import six.moves
 
 from pastamaker import pr
-from pastamaker import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -52,42 +49,11 @@ def is_branch_protected_as_expected(repo, branch):
     return data == expected
 
 
-class PendingPulls(dict):
-    def __init__(self, repo):
-        super(PendingPulls, self).__init__()
-        self._r = repo
-        self._ident = ("pastamaker:%s:%s:" % (repo.owner.login, repo.name))
-
-        self._conn = utils.get_redis()
-
-        for k in self._conn.keys(self._ident + "*"):
-            serialized = self._conn.get(k)
-            headers, data = json.loads(serialized)
-            p = github.PullRequest.PullRequest(self._r._requester,
-                                               headers, data,
-                                               completed=True)
-            self[p.base.ref] = p
-
-    def log(self):
-        for branch, p in self.items():
-            LOG.info("%s expected, sha %s", p.pretty(), p.head.sha)
-
-    def add(self, p):
-        p.pastamaker_update(force=True)
-        serialized = json.dumps((p.raw_headers, p.raw_data))
-        self._conn.set(self._ident + p.base.ref, serialized)
-        self[p.base.ref] = p
-
-    def clear(self, branch):
-        self._conn.delete(self._ident + branch)
-
-
 class PastaMakerEngine(object):
     def __init__(self, g, user, repo):
         self._g = g
         self._u = user
         self._r = repo
-        self.pending_pulls = PendingPulls(self._r)
 
     def _get_logprefix(self, branch="<unknown>"):
         return (self._u.login + "/" + self._r.name +
@@ -104,7 +70,10 @@ class PastaMakerEngine(object):
                                                       data["review"]["state"])
 
         elif event_type == "status":
-            p_info = self._get_logprefix()
+            if incoming_pull:
+                p_info = incoming_pull.pretty()
+            else:
+                p_info = self._get_logprefix()
             extra = "ci-status: %s, sha: %s" % (data["state"], data["sha"])
 
         elif event_type == "refresh":
@@ -123,77 +92,58 @@ class PastaMakerEngine(object):
         # Everything start here
 
         incoming_pull = pr.from_event(self._r, data)
+        if not incoming_pull and event_type == "status":
+            issues = list(self._g.search_issues("is:pr is:open %s" %
+                                                data["sha"]))
+            if len(issues) >= 1:
+                incoming_pull = self._r.get_pull(issues[0].number)
 
         self.log_formated_event(event_type, incoming_pull, data)
-        self.pending_pulls.log()
 
-        handler = getattr(self, "handle_%s" % event_type)
-        if handler:
-            handler(incoming_pull, data)
-
-    def handle_refresh(self, incoming_pull, data):
-        pending_pull = self.pending_pulls.get(data["branch"])
-        if pending_pull:
-            self.proceed_pull_or_find_next(pending_pull)
-        else:
-            self.find_next_pull_to_merge(data["branch"])
-
-    def handle_status(self, incoming_pull, data):
-        # NOTE(sileht): We care only about success or failure state
-        if data["state"] == "pending":
+        if event_type == "refresh":
+            queues = self.get_pull_requests_queue(data["branch"])
+            if queues:
+                self.proceed_queues(queues)
             return
 
-        for branch, p in self.pending_pulls.items():
-            if data["sha"] == p.head.sha:
-                self.proceed_pull_or_find_next(p)
-                return
+        if not incoming_pull:
+            LOG.error("No pull request found in the event, ignoring")
+            return
 
-    def handle_pull_request(self, incoming_pull, data):
-        pending_pull = self.pending_pulls.get(incoming_pull.base.ref)
+        if event_type == "state" and data["state"] == "pending":
+            # Don't compute the queue for nothing
+            return
 
-        if not pending_pull and data["action"] == "closed":
-            # We just want to check if someone close the PR
-            self.find_next_pull_to_merge(incoming_pull.base.ref)
+        queues = self.get_pull_requests_queue(incoming_pull.base.ref)
 
-        elif incoming_pull.number == pending_pull.number:
-            if data["action"] == "synchronize":
-                # Base branch have been merged into the PR
-                self.pending_pulls.add(incoming_pull)
-                # Next step is status event
+        if not queues:
+            LOG.info("Nothing queued, skipping the event")
+            return
 
-            elif data["action"] == "closed":
-                # We just want to check if someone close the PR
-                self.find_next_pull_to_merge(incoming_pull.base.ref)
+        # Something change on our top PR
+        if incoming_pull.number == queues[0].number:
+            self.proceed_queues(queues)
 
-    def handle_pull_request_review(self, incoming_pull, data):
-
-        pending_pull = self.pending_pulls.get(incoming_pull.base.ref)
-        if pending_pull:
-            # Our ready PR have been changed, check if
-            # we can still merge it or to pick another one
-            if incoming_pull.number == pending_pull.number:
-                self.proceed_pull_or_find_next(incoming_pull)
-
-        elif (data["action"] == "submitted"
-              and data["review"]["state"] == "approved"
-              and incoming_pull.approved):
-            # A PR got approvals, let's see if we can merge it
-            self.proceed_pull_or_find_next(incoming_pull)
+        if event_type == "pull_request" and data["action"] == "closed":
+            # A PR have been closed, process the queues
+            self.proceed_queues(queues)
 
     ###########################
-    # Start machine goes here #
+    # State machine goes here #
     ###########################
 
-    def proceed_pull_or_find_next(self, p):
+    def proceed_queues(self, queues):
         """Do the next action for this pull request
 
         'p' is the top priority pull request to merge
         """
+
+        p = queues[0]
+
         LOG.info("%s, processing...", p.pretty())
 
         # NOTE(sileht): This also refresh the PR, following code expects the
         # mergeable_state is up2date
-        self.pending_pulls.add(p)
 
         if p.approved:
             # Everything looks good
@@ -227,7 +177,8 @@ class PastaMakerEngine(object):
                 LOG.warning("%s, FIXME unhandled mergeable_state",
                             p.pretty())
 
-        self.find_next_pull_to_merge(p.base.ref)
+        if len(queues) >= 2:
+            self.proceed_queues(queues[1:])
 
     def dump_pulls_state(self, pulls):
         for p in pulls:
@@ -235,16 +186,9 @@ class PastaMakerEngine(object):
                      p.pretty(), p.ci_status,
                      p.created_at, p.base.sha, p.head.sha)
 
-    def find_next_pull_to_merge(self, branch):
-        pulls = self.get_pull_requests_queue(branch)
-        if pulls:
-            self.proceed_pull_or_find_next(pulls[0])
-
     def get_pull_requests_queue(self, branch):
         LOG.info("%s, looking for pull requests mergeable",
                  self._get_logprefix(branch))
-
-        self.pending_pulls.clear(branch)
 
         sort_key = operator.attrgetter('pastamaker_priority', 'created_at')
 
