@@ -98,7 +98,7 @@ def event_handler():
         get_queue().enqueue(worker.event_handler, event_type, data)
 
     if "repository" in data:
-        repo_name = data["repository"]["full_name"],
+        repo_name = data["repository"]["full_name"]
     else:
         repo_name = data["installation"]["account"]["login"]
 
