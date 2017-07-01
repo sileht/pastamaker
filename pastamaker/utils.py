@@ -24,9 +24,9 @@ import sys
 import daiquiri
 from github import GithubException
 import redis
-import ujson
 import six
 from six.moves import urllib_parse as urlparse
+import ujson
 
 from pastamaker import config
 
