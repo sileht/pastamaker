@@ -133,6 +133,11 @@ def index():
     return flask.send_file(os.path.join("..", "index.html"))
 
 
+@app.route("/favicon.ico")
+def favicon():
+    return flask.send_file(os.path.join("..", "static", "favicon.ico"))
+
+
 def authentification():
     # Only SHA1 is supported
     header_signature = flask.request.headers.get('X-Hub-Signature')
