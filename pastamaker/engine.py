@@ -112,11 +112,16 @@ class PastaMakerEngine(object):
             LOG.error("No pull request found in the event, ignoring")
             return
 
-        if event_type == "status" and data["state"] == "pending":
-            # Don't compute the queue for nothing
-            return
+        # if event_type == "status" and data["state"] == "pending":
+        #     # Don't compute the queue for nothing
+        #    return
 
         queues = self.get_pull_requests_queue(incoming_pull.base.ref)
+        if queues:
+            self.proceed_queues(queues)
+        else:
+            LOG.info("Nothing queued, skipping the event")
+        return
 
         if not queues:
             LOG.info("Nothing queued, skipping the event")
@@ -153,7 +158,7 @@ class PastaMakerEngine(object):
         # NOTE(sileht): This also refresh the PR, following code expects the
         # mergeable_state is up2date
 
-        if p.approved:
+        if p.pastamaker_priority >= 0 and p.approved:
             if p.ci_status == "pending":
                 LOG.info("%s wating for CI completion", p.pretty())
                 return
@@ -181,16 +186,16 @@ class PastaMakerEngine(object):
                 LOG.warning("%s, FIXME unhandled mergeable_state",
                             p.pretty())
 
-        if len(queues) >= 2:
-            self.set_cache_queues(queues[0].base.ref, queues[1:])
-            self.proceed_queues(queues[1:])
-        else:
-            self.set_cache_queues(queues[0].base.ref, [])
+#        if len(queues) >= 2:
+#            self.set_cache_queues(queues[0].base.ref, queues[1:])
+#            self.proceed_queues(queues[1:])
+#        else:
+#            self.set_cache_queues(queues[0].base.ref, [])
 
     def set_cache_queues(self, branch, pulls):
         self._redis.set(
             "queues-%s-%s-%s" % (self._u.login, self._r.name, branch),
-            ujson.dumps([p.raw_data for p in pulls]))
+            ujson.dumps([p.pastamaker_raw_data for p in pulls]))
 
     def dump_pulls_state(self, branch, pulls):
         for p in pulls:
@@ -206,9 +211,9 @@ class PastaMakerEngine(object):
 
         pulls = self._r.get_pulls(sort="created", direction="asc", base=branch)
         pulls = six.moves.map(lambda p: p.pastamaker_update(), pulls)
-        pulls = list(filter(lambda p: p.pastamaker_priority >= 0,
-                            sorted(pulls, key=sort_key, reverse=True)))
+        pulls = list(sorted(pulls, key=sort_key, reverse=True))
         self.set_cache_queues(branch, pulls)
+        # pulls = list(filter(lambda p: p.pastamaker_priority >= 0, pulls))
         self.dump_pulls_state(branch, pulls)
         LOG.info("%s, %s pull request(s) mergeable" %
                  (self._get_logprefix(branch), len(pulls)))

@@ -14,6 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import copy
 import logging
 import re
 import time
@@ -89,6 +90,16 @@ def ci_status(self):
         self._pastamaker_ci_status = (list(self.get_commits())
                                       [-1].get_combined_status().state)
     return self._pastamaker_ci_status
+
+
+@property
+def pastamaker_raw_data(self):
+    data = copy.deepcopy(self.raw_data)
+    data["ci_status"] = self.ci_status
+    data["pastamaker_priority"] = self.pastamaker_priority
+    data["approvals"] = self.approvals
+    data["approved"] = self.approved
+    return data
 
 
 @property
@@ -200,6 +211,7 @@ def monkeypatch_github():
     p.pastamaker_update = pastamaker_update
     p.pastamaker_merge = pastamaker_merge
     p.pastamaker_priority = pastamaker_priority
+    p.pastamaker_raw_data = pastamaker_raw_data
 
     # Missing Github API
     p.update_branch = webhack.web_github_update_branch
