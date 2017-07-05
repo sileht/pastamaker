@@ -16,7 +16,6 @@
 
 import copy
 import logging
-import re
 import time
 
 import github
@@ -44,29 +43,32 @@ def approvals(self):
     if not hasattr(self, "_pastamaker_approvals"):
         allowed = [u.id for u in self.base.repo.get_collaborators()]
 
-        users = set()
-        fast_merge = False
+        users_info = {}
+        reviews_ok = set()
+        reviews_ko = set()
         for review in self.get_reviews():
             if review.user.id not in allowed:
                 continue
-            elif review.state == 'APPROVED':
-                if re.search("@pastamaker.*fast merge", review.body.lower()):
-                    fast_merge = True
-                users.add(review.user.login)
+
+            users_info[review.user.login] = review.user.raw_data
+            if review.state == 'APPROVED':
+                reviews_ok.add(review.user.login)
+                if review.user.login in reviews_ko:
+                    reviews_ko.remove(review.user.login)
+
             elif review.state in ["DISMISSED", "CHANGES_REQUESTED"]:
-                if review.user.login in users:
-                    users.remove(review.user.login)
-                    fast_merge = False
+                if review.user.login in reviews_ok:
+                    reviews_ok.remove(review.user.login)
+                if review.state == "CHANGES_REQUESTED":
+                    reviews_ko.add(review.user.login)
             elif review.state == 'COMMENTED':
                 pass
             else:
                 LOG.error("%s FIXME review state unhandled: %s",
                           self.pretty(), review.state)
 
-        if fast_merge and len(users) >= 1:
-            self._pastamaker_approvals = 42
-        else:
-            self._pastamaker_approvals = len(users)
+            self._pastamaker_approvals = ([users_info[u] for u in reviews_ok],
+                                          [users_info[u] for u in reviews_ko])
     return self._pastamaker_approvals
 
 
@@ -80,22 +82,36 @@ def approved(self):
             break
     else:
         required = int(config.REQUIRED_APPROVALS_DEFAULT)
-    return self.approvals >= required
+    return len(self.approvals[0]) >= required and len(self.approvals[1]) == 0
+
+
+def _set_ci_status(p):
+    status = list(p.get_commits())[-1].get_combined_status()
+    p._pastamaker_ci_status = (status.state)
+    # Assume we have only one CI
+    p._pastamaker_ci_target_url = status.statuses[0].target_url
 
 
 @property
 def ci_status(self):
     # Only work for PR with less than 250 commites
     if not hasattr(self, "_pastamaker_ci_status"):
-        self._pastamaker_ci_status = (list(self.get_commits())
-                                      [-1].get_combined_status().state)
+        _set_ci_status(self)
     return self._pastamaker_ci_status
+
+
+@property
+def ci_target_url(self):
+    if not hasattr(self, "_pastamaker_ci_target_url"):
+        _set_ci_status(self)
+    return self._pastamaker_ci_target_url
 
 
 @property
 def pastamaker_raw_data(self):
     data = copy.deepcopy(self.raw_data)
     data["ci_status"] = self.ci_status
+    data["ci_target_url"] = self.ci_target_url
     data["pastamaker_priority"] = self.pastamaker_priority
     data["approvals"] = self.approvals
     data["approved"] = self.approved
@@ -141,6 +157,7 @@ def pastamaker_priority(self):
 def pastamaker_update(self, force=False):
     for attr in ["_pastamaker_priority",
                  "_pastamaker_ci_status",
+                 "_pastamaker_ci_target_url",
                  "_pastamaker_approvals"]:
         if hasattr(self, attr):
             delattr(self, attr)
@@ -208,6 +225,7 @@ def monkeypatch_github():
     p.approved = approved
     p.approvals = approvals
     p.ci_status = ci_status
+    p.ci_target_url = ci_target_url
     p.pastamaker_update = pastamaker_update
     p.pastamaker_merge = pastamaker_merge
     p.pastamaker_priority = pastamaker_priority
