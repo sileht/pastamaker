@@ -46,11 +46,6 @@ def get_queue():
     return flask.g.rq_queue
 
 
-@app.route("/", methods=["GET"])
-def hello():
-    return "Welcome to pastamaker"
-
-
 @app.route("/auth", methods=["GET"])
 def auth():
     return "pastamaker don't need oauth setup"
