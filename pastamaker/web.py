@@ -125,12 +125,12 @@ def event_handler():
 
 @app.route("/")
 def index():
-    return flask.send_file(os.path.join("..", "index.html"))
+    return flask.send_file(os.path.join("static", "index.html"))
 
 
 @app.route("/favicon.ico")
 def favicon():
-    return flask.send_file(os.path.join("..", "static", "favicon.ico"))
+    return flask.send_file(os.path.join("static", "favicon.ico"))
 
 
 def authentification():
