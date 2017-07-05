@@ -20,6 +20,7 @@ import logging
 import flask
 import github
 import rq
+import ujson
 
 from pastamaker import config
 from pastamaker import utils
@@ -82,7 +83,24 @@ def force_refresh(owner, repo, branch):
 
 @app.route("/queue/<owner>/<repo>/<path:branch>")
 def queue(owner, repo, branch):
-    return get_redis().get("queues-%s-%s-%s" % (owner, repo, branch)) or "[]"
+    return get_redis().get("queues#%s#%s#%s" % (owner, repo, branch)) or "[]"
+
+
+@app.route("/status")
+def status():
+    r = get_redis()
+    queues = []
+    for key in r.keys("queues#*#*#*"):
+        LOG.error(key)
+        _, owner, repo, branch = key.split("#")
+        pulls = ujson.loads(r.get(key) or "[]")
+        queues.append({
+            "owner": owner,
+            "repo": repo,
+            "branch": branch,
+            "pulls": pulls,
+        })
+    return ujson.dumps(queues)
 
 
 @app.route("/event", methods=["POST"])
