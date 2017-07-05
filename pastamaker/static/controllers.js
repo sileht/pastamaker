@@ -32,7 +32,7 @@ app.classy.controller({
 
 app.classy.controller({
     name: 'PullsController',
-    inject: ['$scope', '$q', '$http', '$routeParams', '$location', 'gobacker'],
+    inject: ['$scope', '$q', '$http', '$routeParams', '$location'],
     init: function() {
         'use strict';
 
@@ -41,7 +41,7 @@ app.classy.controller({
 
         this.$http.get('/status')
         .success(function(data, status, headers) {
-            data._data.forEach(function(group) {
+            data.forEach(function(group) {
                 this.$scope.groups.push(group)
             });
 
@@ -323,10 +323,6 @@ app.classy.controller({
         this.nanobar_level += increment;
         this.nanobar.go(Math.min(100, Math.ceil(this.nanobar_level)));
     },
-
-    rememberWhereFrom: function() {
-        this.gobacker.remember(this.$location.path());
-    }
 
 })
 ;
