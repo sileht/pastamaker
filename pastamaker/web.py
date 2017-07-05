@@ -16,6 +16,7 @@
 
 import hmac
 import logging
+import os
 
 import flask
 import github
@@ -125,6 +126,11 @@ def event_handler():
              event_type, event_id)
 
     return "", 202
+
+
+@app.route("/")
+def index():
+    return flask.send_file(os.path.join("..", "index.html"))
 
 
 def authentification():
