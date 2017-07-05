@@ -155,7 +155,7 @@ class PastaMakerEngine(object):
 
         if p.approved:
             if p.ci_status == "pending":
-                LOG.info("%s wating for CI completion", p.pretty())
+                LOG.info("%s waiting for CI completion", p.pretty())
                 return
 
             # Everything looks good
