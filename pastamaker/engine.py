@@ -193,9 +193,12 @@ class PastaMakerEngine(object):
 #            self.set_cache_queues(queues[0].base.ref, [])
 
     def set_cache_queues(self, branch, pulls):
-        self._redis.set(
-            "queues#%s#%s#%s" % (self._u.login, self._r.name, branch),
-            ujson.dumps([p.pastamaker_raw_data for p in pulls]))
+        key = "queues#%s#%s#%s" % (self._u.login, self._r.name, branch),
+        if pulls:
+            self._redis.set(key, ujson.dumps([p.pastamaker_raw_data
+                                              for p in pulls]))
+        else:
+            self._redis.unlink(key)
 
     def dump_pulls_state(self, branch, pulls):
         for p in pulls:
