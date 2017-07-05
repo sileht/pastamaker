@@ -153,12 +153,12 @@ class PastaMakerEngine(object):
 
         p = queues[0]
 
-        LOG.info("%s, processing...", p.pretty())
-
         # NOTE(sileht): This also refresh the PR, following code expects the
         # mergeable_state is up2date
 
         if p.pastamaker_priority >= 0 and p.approved:
+            LOG.info("%s, processing...", p.pretty())
+
             if p.ci_status == "pending":
                 LOG.info("%s wating for CI completion", p.pretty())
                 return
@@ -185,6 +185,7 @@ class PastaMakerEngine(object):
             else:
                 LOG.warning("%s, FIXME unhandled mergeable_state",
                             p.pretty())
+
 
 #        if len(queues) >= 2:
 #            self.set_cache_queues(queues[0].base.ref, queues[1:])
@@ -218,6 +219,6 @@ class PastaMakerEngine(object):
         self.set_cache_queues(branch, pulls)
         # pulls = list(filter(lambda p: p.pastamaker_priority >= 0, pulls))
         self.dump_pulls_state(branch, pulls)
-        LOG.info("%s, %s pull request(s) mergeable" %
+        LOG.info("%s, %s pull request(s)" %
                  (self._get_logprefix(branch), len(pulls)))
         return pulls
