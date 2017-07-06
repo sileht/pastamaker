@@ -193,6 +193,7 @@ class PastaMakerEngine(object):
                 [p.pastamaker_raw_data for p in pulls]))
         else:
             self._redis.unlink(key)
+        self._redis.publish("update", key)
 
     def dump_pulls_state(self, branch, pulls):
         for p in pulls:

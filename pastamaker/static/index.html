@@ -17,7 +17,13 @@
 <div class="container" ng-controller="AppController">
     <div xclass="page-header" style="padding-top:15px;padding-bottom:0px;margin-bottom:0px;">
         <!--h1>GitHub Pull Request Triage</h1-->
-        <p class="lead"><b>Pastamakers</b> pull requests dashboard</p>
+        <p class="lead">
+            <b>Pastamakers</b> pull requests dashboard
+            <span ng-if="autorefresh"><i><small> -
+                <span ng-show="refreshing">refreshing<span>
+                <span ng-hide="refreshing">refresh in {{ counter }} seconds<span>
+            </small></i></span>
+        </p>
     </div>
 
     <ng-view></ng-view>

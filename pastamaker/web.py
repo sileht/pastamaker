@@ -106,9 +106,7 @@ def queue(owner, repo, branch):
     return get_redis().get("queues~%s~%s~%s" % (owner, repo, branch)) or "[]"
 
 
-@app.route("/status")
-def status():
-    r = get_redis()
+def _get_status(r):
     queues = []
     for key in r.keys("queues~*~*~*"):
         _, owner, repo, branch = key.split("~")
@@ -124,6 +122,29 @@ def status():
             "updated_at": updated_at,
         })
     return ujson.dumps(queues)
+
+
+@app.route("/status")
+def status():
+    r = get_redis()
+    return _get_status(r)
+
+
+def stream_status():
+    with app.app_context():
+        r = get_redis()
+        yield _get_status(r)
+        pubsub = r.pubsub()
+        pubsub.subscribe("update")
+        for item in pubsub.listen():
+            if item["channel"] == "update":
+                yield _get_status(r)
+
+
+@app.route('/status/stream')
+def stream():
+    return flask.Response(stream_status(),
+                          mimetype="text/event-stream")
 
 
 @app.route("/event", methods=["POST"])
