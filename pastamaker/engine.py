@@ -156,7 +156,7 @@ class PastaMakerEngine(object):
         # NOTE(sileht): This also refresh the PR, following code expects the
         # mergeable_state is up2date
 
-        if p.pastamaker_priority >= 0 and p.approved:
+        if p.approved:
             LOG.info("%s, processing...", p.pretty())
 
             if p.ci_status == "pending":
@@ -205,7 +205,7 @@ class PastaMakerEngine(object):
         LOG.info("%s, looking for pull requests mergeable",
                  self._get_logprefix(branch))
 
-        sort_key = operator.attrgetter('pastamaker_priority', 'updated_at')
+        sort_key = operator.attrgetter('pastamaker_weight', 'updated_at')
 
         pulls = self._r.get_pulls(sort="created", direction="asc", base=branch)
         pulls = six.moves.map(lambda p: p.pastamaker_update(), pulls)

@@ -27,9 +27,10 @@ LOG = logging.getLogger(__name__)
 
 
 def pretty(self):
-    return "%s/%s/pull/%s@%s (%s, %s)" % (
+    return "%s/%s/pull/%s@%s (%s, %s, %s)" % (
         self.base.user.login, self.base.repo.name,
         self.number, self.base.ref, self.mergeable_state or "none",
+        self.pastamaker_weight,
         len(self.approvals[0]))
 
 
@@ -112,50 +113,50 @@ def pastamaker_raw_data(self):
     data = copy.deepcopy(self.raw_data)
     data["ci_status"] = self.ci_status
     data["ci_target_url"] = self.ci_target_url
-    data["pastamaker_priority"] = self.pastamaker_priority
+    data["pastamaker_weight"] = self.pastamaker_weight
     data["approvals"] = self.approvals
     data["approved"] = self.approved
     return data
 
 
 @property
-def pastamaker_priority(self):
-    if not hasattr(self, "_pastamaker_priority"):
+def pastamaker_weight(self):
+    if not hasattr(self, "_pastamaker_weight"):
         if not self.approved:
-            priority = -1
+            weight = -1
         elif (self.mergeable_state == "clean"
               and self.ci_status == "success"
               and self.update_branch_state == "clean"):
             # Best PR ever, up2date and CI OK
-            priority = 11
+            weight = 11
         elif self.mergeable_state == "clean":
-            priority = 10
+            weight = 10
         elif (self.mergeable_state == "blocked"
               and self.ci_status == "pending"
               and self.update_branch_state == "clean"):
             # Maybe clean soon, or maybe this is the previous run
             # selected PR that we just rebase
-            priority = 10
+            weight = 10
         elif (self.mergeable_state == "behind"
               and self.update_branch_state not in ["unknown", "dirty"]):
             # Not up2date, but ready to merge, is branch updatable
             if self.ci_status == "success":
-                priority = 7
+                weight = 7
             elif self.ci_status == "pending":
-                priority = 5
+                weight = 5
             else:
-                priority = -1
+                weight = -1
         else:
-            priority = -1
-        setattr(self, "_pastamaker_priority", priority)
-        LOG.info("%s prio: %s, %s, %s, %s, %s", self.pretty(), priority,
-                 self.approved, self.mergeable_state, self.ci_status,
-                 self.update_branch_state)
-    return self._pastamaker_priority
+            weight = -1
+        self._pastamaker_weight = weight
+        # LOG.info("%s prio: %s, %s, %s, %s, %s", self.pretty(), weight,
+        #          self.approved, self.mergeable_state, self.ci_status,
+        #          self.update_branch_state)
+    return self._pastamaker_weight
 
 
 def pastamaker_update(self, force=False):
-    for attr in ["_pastamaker_priority",
+    for attr in ["_pastamaker_weight",
                  "_pastamaker_ci_status",
                  "_pastamaker_ci_target_url",
                  "_pastamaker_approvals"]:
@@ -228,7 +229,7 @@ def monkeypatch_github():
     p.ci_target_url = ci_target_url
     p.pastamaker_update = pastamaker_update
     p.pastamaker_merge = pastamaker_merge
-    p.pastamaker_priority = pastamaker_priority
+    p.pastamaker_weight = pastamaker_weight
     p.pastamaker_raw_data = pastamaker_raw_data
 
     # Missing Github API
