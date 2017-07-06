@@ -11,7 +11,6 @@ app.classy.controller({
     inject: ['$scope', '$http'],
     init: function() {
         'use strict';
-
         this.$scope.groups = [];
         this.$http.get('/status').success(function(data, status, headers) {
             data.forEach(function(group) {
