@@ -30,7 +30,7 @@ def pretty(self):
     return "%s/%s/pull/%s@%s (%s, %s)" % (
         self.base.user.login, self.base.repo.name,
         self.number, self.base.ref, self.mergeable_state or "none",
-        self.approvals)
+        len(self.approvals[0]))
 
 
 @property
