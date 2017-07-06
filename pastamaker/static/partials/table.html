@@ -9,41 +9,33 @@
     <span ng-hide="refreshing">refresh in {{ counter }} seconds</span>
 </small></i></div>
 <div ng-repeat="group in groups | orderBy:'updated_at':true" class="group">
-    <table class="table table-condensed table-bordered multiple">
+    <table class="table table-condensed table-hover multiple">
      <thead>
      <tr>
          <th class="title">
             <a href="https://github.com/{{ group.owner }}/{{ group.repo }}/pulls">{{ group.owner }}/{{ group.repo }}</a> - {{ group.branch }}
          </th>
-         <th class="last-updated">Created</th>
+         <th class="state"><span class="glyphicon glyphicon-comment"></span></th>
+         <th class="state"><span class="glyphicon glyphicon-list"></span></th>
+         <th class="state"><span class="glyphicon glyphicon-file"></span></th>
          <th class="last-updated">Last updated</th>
+         <th class="state" title="Indicates its status">CI</th>
          <th class="reviews"><span class="glyphicon glyphicon-thumbs-up"></span></th>
          <th class="reviews"><span class="glyphicon glyphicon-thumbs-down"></span></th>
-         <th class="state" title="Indicates its status">CI</th>
          <th class="queue">Weight</th>
      </tr>
      </thead>
      <tbody>
          <tr ng-repeat="pull in group.pulls">
              <td class="title">
+                 <div class="pull-right"><span style="color:green">+{{ pull.additions }}</span> / <span style="color:red">-{{ pull.deletions }}</span></div>
                  <a href="{{ pull.user.html_url }}"><img ng-src="{{ pull.user.avatar_url }}" class="avatar" alt="{{ pull.user.login }}"></a>
-                 <a href="{{ pull.html_url }}" target="_blank">{{ pull.number}}: {{ pull.title }}</a>
+                 <a href="{{ pull.html_url }}" target="_blank">{{ pull.title }} <span style="color:grey">#{{ pull.number }}</span></a>
              </td>
-             <td class="last-updated"><time am-time-ago="pull.created_at"></time>
-             <td class="last-updated"><time am-time-ago="pull.updated_at"></time>
-             </td>
-             <td class="reviews">
-                 <a ng-repeat="user in pull.approvals[0]"
-                    href="{{ user.html_url }}"
-                    target="_blank"
-                    title="{{ user.login }}"><img ng-src="{{ user.avatar_url }}" class="avatar" alt="{{ user.login }}"></a>
-             </td>
-             <td class="reviews">
-                 <a ng-repeat="user in pull.approvals[1]"
-                    href="{{ user.html_url }}"
-                    target="_blank"
-                    title="{{ user.login }}"><img ng-src="{{ user.avatar_url }}" class="avatar" alt="{{ user.login }}"></a>
-             </td>
+             <td class="state"><a href="{{ pull.html_url }}" target="_blank">{{ pull.comments }}</a></td>
+             <td class="state"><a href="{{ pull.html_url }}/commits" target="_blank">{{ pull.commits }}</a></td>
+             <td class="state"><a href="{{ pull.html_url }}/files" target="_blank">{{ pull.changed_files }}</a></td>
+             <td class="last-updated"><time am-time-ago="pull.updated_at"></time></td>
              <td class="state">
                  <a href="{{ pull.ci_target_url }}">
                      <span ng-if="pull.ci_status == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
@@ -51,8 +43,21 @@
                      <span ng-if="pull.ci_status == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
                  </a>
             </td>
-            <td class="queue">
-                {{ pull.pastamaker_weight }}
+             <td class="reviews info">
+                 <a ng-repeat="user in pull.approvals[0]"
+                    href="{{ user.html_url }}"
+                    target="_blank"
+                    title="{{ user.login }}"><img ng-src="{{ user.avatar_url }}" class="avatar" alt="{{ user.login }}"></a>
+             </td>
+             <td class="reviews warning">
+                 <a ng-repeat="user in pull.approvals[1]"
+                    href="{{ user.html_url }}"
+                    target="_blank"
+                    title="{{ user.login }}"><img ng-src="{{ user.avatar_url }}" class="avatar" alt="{{ user.login }}"></a>
+             </td>
+            <td class="queue" ng-class="{success: pull.pastamaker_weight >= 10, active: pull.pastamaker_weight == -1, info: pull.pastamaker_weight >= 0 && pull.pastamaker_weight < 10}">
+                <span ng-if="pull.pastamaker_weight >= 0">{{ pull.pastamaker_weight }}</span>
+                <span ng-if="pull.pastamaker_weight < 0">N/A</span>
             </td>
         </tr>
      </tbody>

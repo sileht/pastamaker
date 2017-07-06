@@ -42,11 +42,14 @@ table.expanded td {
     height: 20px;
     margin-top: -20px;
 }
+.label-as-badge {
+    border-radius: 1em;
+}
 .group {
     margin-bottom: 5px;
 }
 .group table.table {
-    margin-bottom: 0px;
+    margin-bottom: 15px;
 }
 
 a.closer {
@@ -58,10 +61,10 @@ a.closer:hover {
 
 /* minimum widths needed when working with multiple tables */
 table.multiple .last-updated {
-    width: 110px;
+    width: 104px;
 }
 table.multiple .reviews {
-    width: 100px;
+    width: 70px;
 }
 table.multiple .queue {
     width: 35px;
@@ -70,6 +73,10 @@ table.multiple .queue {
 table.multiple .state {
     width: 35px;
     text-align: center;
+}
+table.multiple .state a {
+    display: block;
+    width: 100%;
 }
 
 p.table-foot-note {
