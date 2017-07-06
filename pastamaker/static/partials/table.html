@@ -5,7 +5,7 @@
    </p>
 </div>
 
-<div ng-repeat="group in groups" class="group">
+<div ng-repeat="group in groups | orderBy:'updated_at':true" class="group">
     <table class="table table-condensed table-bordered multiple">
      <thead>
      <tr>

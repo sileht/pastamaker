@@ -113,11 +113,15 @@ def status():
     for key in r.keys("queues~*~*~*"):
         _, owner, repo, branch = key.split("~")
         pulls = ujson.loads(r.get(key) or "[]")
+        updated_at = None
+        if pulls:
+            updated_at = list(sorted([p["updated_at"] for p in pulls]))[-1]
         queues.append({
             "owner": owner,
             "repo": repo,
             "branch": branch,
             "pulls": pulls,
+            "updated_at": updated_at,
         })
     return ujson.dumps(queues)
 
