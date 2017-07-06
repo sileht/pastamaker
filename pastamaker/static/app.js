@@ -1,6 +1,7 @@
 angular.module('triage', [
     'ngRoute',
     'triage.controllers',
+    'angularMoment',
     'classy'
 ])
 
