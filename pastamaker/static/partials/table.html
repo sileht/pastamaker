@@ -4,7 +4,10 @@
      {{ general_error }}
    </p>
 </div>
-
+<div ng-show="autorefresh" class="autorefresh"><i><small>
+    <span ng-show="refreshing">refreshing</span>
+    <span ng-hide="refreshing">refresh in {{ counter }} seconds</span>
+</small></i></div>
 <div ng-repeat="group in groups | orderBy:'updated_at':true" class="group">
     <table class="table table-condensed table-bordered multiple">
      <thead>
@@ -55,3 +58,4 @@
      </tbody>
     </table>
 </div>
+

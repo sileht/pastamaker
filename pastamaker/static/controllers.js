@@ -11,12 +11,14 @@ app.classy.controller({
     inject: ['$scope', '$http', '$interval', '$location'],
     init: function() {
         'use strict';
+        this.refresh_interval = 5 * 60;
+        this.$scope.autorefresh = false;
         this.$scope.counter = 0;
         this.refresh()
-        this.$scope.autorefresh = this.$location.search().autorefresh === "true";
-        if (this.$scope.autorefresh){
+        if (this.$location.search().autorefresh === "true"){
+            this.$scope.autorefresh = true;
             console.log("auto refresh enabled");
-            this.$interval(this.refresh, 60 * 1000);
+            this.$interval(this.refresh, this.refresh_interval * 1000);
             this.$interval(this.count, 1 * 1000);
         }
         return
@@ -36,7 +38,6 @@ app.classy.controller({
     },
     count: function(){
         this.$scope.counter -= 1;
-        console.log("count " + this.$scope.counter);
     },
     refresh: function() {
         console.log("refreshing");
@@ -47,12 +48,12 @@ app.classy.controller({
                 this.$scope.groups.push(group)
             }.bind(this));
             this.$scope.refreshing = false;
-            this.$scope.counter = 60;
+            this.$scope.counter = this.refresh_interval;
         }.bind(this))
         .error(function(data, status) {
             console.warn(data, status);
             this.$scope.refreshing = false;
-            this.$scope.counter = 60;
+            this.$scope.counter = this.refresh_interval;
         });
     },
 })
