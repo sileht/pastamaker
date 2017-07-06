@@ -9,8 +9,6 @@ pastamaker
 pastamaker is a Github App to automatically manage Pull Requests
 "branch update" and "merge" when this one have 2 reviewer approvals
 
-Anything catchng "@pastamaker.*fast merge" will bypass the required approvals.
-
 It's currently used by `gnocchixyz projects <https://github.com/gnocchixyz>`_, the app name is 'pastamaker'.
 
 Github App Settings
@@ -73,4 +71,4 @@ Heroku Setup
 
     heroku addons:open scheduler:standard
     # trigger refresh manually or to configure the scheduler
-    heroku run python pastamaker/refresher.py YYYYY/gnocchixyz/gnocchi/branch
+    heroku run python pastamaker/refresher.py
