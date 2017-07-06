@@ -105,6 +105,5 @@ def get_installations(integration):
 def get_installation_id(integration, owner):
     installations = get_installations(integration)
     for install in installations:
-        LOG.error("INSTALL: %s" % install)
         if install["account"]["login"] == owner:
             return install["id"]

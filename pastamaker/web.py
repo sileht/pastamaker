@@ -53,8 +53,7 @@ def auth():
 
 @app.route("/refresh/<owner>/<repo>/<path:branch>",
            methods=["POST"])
-def force_refresh(owner, repo, branch):
-    authentification()
+def refresh(owner, repo, branch):
 
     integration = github.GithubIntegration(config.INTEGRATION_ID,
                                            config.PRIVATE_KEY)
@@ -74,6 +73,31 @@ def force_refresh(owner, repo, branch):
         "branch": branch,
     }
     get_queue().enqueue(worker.event_handler, "refresh", data)
+    return "", 202
+
+
+@app.route("/refresh", methods=["POST"])
+def refresh_all():
+    authentification()
+
+    integration = github.GithubIntegration(config.INTEGRATION_ID,
+                                           config.PRIVATE_KEY)
+    for install in utils.get_installations(integration):
+        token = integration.get_access_token(install["id"]).token
+        g = github.Github(token)
+        i = g.get_installation(install["id"])
+
+        for repo in i.get_repos():
+            pulls = repo.get_pulls()
+            branches = [p.base.ref for p in pulls]
+
+            # Mimic the github event format
+            for branch in branches:
+                get_queue().enqueue(worker.event_handler, "refresh", {
+                    'repository': repo.raw_data,
+                    'installation': {'id': install['id']},
+                    'branch': branch,
+                })
     return "", 202
 
 

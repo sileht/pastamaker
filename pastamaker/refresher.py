@@ -25,25 +25,34 @@ from pastamaker import config
 from pastamaker import utils
 
 
+def refresh(slug=None):
+    data = os.urandom(250)
+    hmac = utils.compute_hmac(data)
+
+    url = config.BASE_URL + "/refresh"
+    if slug:
+        url = url + "/" + slug
+    r = requests.post(url,
+                      headers={"X-Hub-Signature": "sha1=" + hmac},
+                      data=data)
+    r.raise_for_status()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Force refresh of pastamaker'
     )
     parser.add_argument(
-        "slug", nargs="+",
+        "slug", nargs="*",
         help="<owner>/<repo>/<branch>")
 
-    base_url = config.BASE_URL
     args = parser.parse_args()
 
-    data = os.urandom(250)
-    hmac = utils.compute_hmac(data)
-
-    for slug in args.slug:
-        url = base_url + "/refresh/" + slug
-        r = requests.post(url, headers={"X-Hub-Signature": "sha1=" + hmac},
-                          data=data)
-        r.raise_for_status()
+    if args.slug:
+        for slug in args.slug:
+            refresh(slug)
+    else:
+        refresh()
 
 
 if __name__ == '__main__':
