@@ -112,9 +112,9 @@ class PastaMakerEngine(object):
             LOG.error("No pull request found in the event, ignoring")
             return
 
-        # if event_type == "status" and data["state"] == "pending":
-        #     # Don't compute the queue for nothing
-        #    return
+        if event_type == "status" and data["state"] == "pending":
+            # Don't compute the queue for nothing
+            return
 
         queues = self.get_pull_requests_queue(incoming_pull.base.ref)
         if queues:
@@ -186,13 +186,6 @@ class PastaMakerEngine(object):
                 LOG.warning("%s, FIXME unhandled mergeable_state",
                             p.pretty())
 
-
-#        if len(queues) >= 2:
-#            self.set_cache_queues(queues[0].base.ref, queues[1:])
-#            self.proceed_queues(queues[1:])
-#        else:
-#            self.set_cache_queues(queues[0].base.ref, [])
-
     def set_cache_queues(self, branch, pulls):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
         if pulls:
@@ -211,13 +204,12 @@ class PastaMakerEngine(object):
         LOG.info("%s, looking for pull requests mergeable",
                  self._get_logprefix(branch))
 
-        sort_key = operator.attrgetter('pastamaker_priority', 'created_at')
+        sort_key = operator.attrgetter('pastamaker_priority', 'updated_at')
 
         pulls = self._r.get_pulls(sort="created", direction="asc", base=branch)
         pulls = six.moves.map(lambda p: p.pastamaker_update(), pulls)
         pulls = list(sorted(pulls, key=sort_key, reverse=True))
         self.set_cache_queues(branch, pulls)
-        # pulls = list(filter(lambda p: p.pastamaker_priority >= 0, pulls))
         self.dump_pulls_state(branch, pulls)
         LOG.info("%s, %s pull request(s)" %
                  (self._get_logprefix(branch), len(pulls)))
