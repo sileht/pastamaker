@@ -109,7 +109,7 @@ class PastaMakerEngine(object):
             return
 
         if not incoming_pull:
-            LOG.error("No pull request found in the event, ignoring")
+            LOG.info("No pull request found in the event, ignoring")
             return
 
         if event_type == "status" and data["state"] == "pending":
