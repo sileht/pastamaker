@@ -87,10 +87,14 @@ def approved(self):
 
 
 def _set_ci_status(p):
-    status = list(p.get_commits())[-1].get_combined_status()
-    p._pastamaker_ci_status = (status.state)
-    # Assume we have only one CI
-    p._pastamaker_ci_target_url = status.statuses[0].target_url
+    commit = p.base.repo.get_commit(p.head.sha)
+    status = commit.get_combined_status()
+    p._pastamaker_ci_status = status.state
+    if status.statuses:
+        # Assume we have only one CI
+        p._pastamaker_ci_target_url = status.statuses[0].target_url
+    else:
+        p._pastamaker_ci_target_url = "#"
 
 
 @property
