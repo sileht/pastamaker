@@ -68,8 +68,8 @@ def approvals(self):
                 LOG.error("%s FIXME review state unhandled: %s",
                           self.pretty(), review.state)
 
-            self._pastamaker_approvals = ([users_info[u] for u in reviews_ok],
-                                          [users_info[u] for u in reviews_ko])
+        self._pastamaker_approvals = ([users_info[u] for u in reviews_ok],
+                                      [users_info[u] for u in reviews_ko])
     return self._pastamaker_approvals
 
 
@@ -223,8 +223,8 @@ def monkeypatch_github():
     p = github.PullRequest.PullRequest
     p.pretty = pretty
     p.mergeable_state_computed = mergeable_state_computed
-    p.approved = approved
     p.approvals = approvals
+    p.approved = approved
     p.ci_status = ci_status
     p.ci_target_url = ci_target_url
     p.pastamaker_update = pastamaker_update
