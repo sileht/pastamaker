@@ -173,12 +173,18 @@ def event_handler():
 
 @app.route("/")
 def index():
-    return flask.send_file(os.path.join("static", "index.html"))
+    return app.send_static_file("index.html")
 
 
 @app.route("/favicon.ico")
 def favicon():
-    return flask.send_file(os.path.join("static", "favicon.ico"))
+    return app.send_static_file("favicon.ico")
+
+
+@app.route("/fonts/<file>")
+def fonts(file):
+    # bootstrap fonts
+    return flask.send_from_directory(os.path.join("static", "fonts"), file)
 
 
 def authentification():

@@ -9,3 +9,4 @@ gunicorn
 six
 pyyaml
 ujson
+gevent
