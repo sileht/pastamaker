@@ -17,7 +17,7 @@ app.classy.controller({
         this.$scope.autorefresh = false;
         this.$scope.event = false;
 
-        if (this.$location.search().event === "true"){
+        if(typeof(EventSource) !== "undefined") {
             console.log("event enabled");
             this.$scope.event = true;
             var source = new EventSource('/status/stream');
