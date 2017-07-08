@@ -13,16 +13,10 @@ app.classy.controller({
         'use strict';
         this.refresh_interval = 5 * 60;
         this.$scope.autorefresh = false;
+        this.$scope.event = false;
         this.$scope.counter = 0;
-        this.refresh()
-        if (this.$location.search().autorefresh === "true"){
-            this.$scope.autorefresh = true;
-            console.log("auto refresh enabled");
-            this.$interval(this.refresh, this.refresh_interval * 1000);
-            this.$interval(this.count, 1 * 1000);
-        }
-        return
-        if (typeof(EventSource) !== "undefined") {
+        if (this.$location.search().event === "true"){
+            this.$scope.event = true;
             var source = new EventSource('/status/stream');
             source.onmessage = function (event) {
                 var data = JSON.parse(event.data);
@@ -32,8 +26,13 @@ app.classy.controller({
                 }.bind(this));
             }.bind(this);
         } else {
-            console.warn("No EventSource support, disabling auto refresh");
-            this.refresh()
+            this.refresh();
+            if (this.$location.search().autorefresh === "true"){
+                this.$scope.autorefresh = true;
+                console.log("auto refresh enabled");
+                this.$interval(this.refresh, this.refresh_interval * 1000);
+                this.$interval(this.count, 1 * 1000);
+            }
         }
     },
     count: function(){
