@@ -40,7 +40,9 @@ def get_redis():
     global REDIS_CONNECTION
 
     if REDIS_CONNECTION is None:
-        redis_url = os.getenv('REDISTOGO_URL')
+        redis_url = os.getenv('REDIS_URL')
+        if not redis_url:
+            redis_url = os.getenv('REDISTOGO_URL')
         REDIS_CONNECTION = redis.from_url(redis_url)
     return REDIS_CONNECTION
 
