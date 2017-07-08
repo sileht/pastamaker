@@ -130,20 +130,19 @@ def status():
     return _get_status(r)
 
 
-def stream_status():
-    with app.app_context():
-        r = get_redis()
-        yield _get_status(r)
-        pubsub = r.pubsub()
-        pubsub.subscribe("update")
-        for item in pubsub.listen():
-            if item["channel"] == "update":
-                yield _get_status(r)
+def stream_generate():
+    r = get_redis()
+    yield _get_status(r)
+    pubsub = r.pubsub()
+    pubsub.subscribe("update")
+    for item in pubsub.listen():
+        if item["channel"] == "update":
+            yield _get_status(r)
 
 
 @app.route('/status/stream')
 def stream():
-    return flask.Response(stream_status(),
+    return flask.Response(flask.stream_with_context(stream_generate()),
                           mimetype="text/event-stream")
 
 
