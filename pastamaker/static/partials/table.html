@@ -4,9 +4,18 @@
      {{ general_error }}
    </p>
 </div>
-<div ng-show="autorefresh" class="autorefresh"><i><small>
-    <span ng-show="refreshing">refreshing</span>
-    <span ng-hide="refreshing">refresh in {{ counter }} seconds</span>
+<div class="autorefresh"><i><small>
+    <span>Updated <time am-time-ago="last_update"></time></span>
+    <span ng-show="autorefresh">
+        <span ng-show="refreshing">, refreshing...</span>
+        <span ng-hide="refreshing">, refresh in {{ counter }} seconds</span>
+    </span>
+    <span ng-show="event">
+        by an push event
+    </span>
+    <span ng-hide="event || autorefresh">
+        , autorefresh disabled
+    </span>
 </small></i></div>
 <div ng-repeat="group in groups | orderBy:'updated_at':true" class="group">
     <table class="table table-condensed table-hover multiple">

@@ -14,6 +14,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import gevent
+import gevent.monkey
+gevent.monkey.patch_all()
+
 import hmac
 import logging
 import os
@@ -130,14 +134,24 @@ def status():
     return _get_status(r)
 
 
+def stream_message(_type, data):
+    return 'event: %s\ndata: %s\n\n' % (_type, data)
+
+
 def stream_generate():
     r = get_redis()
-    yield _get_status(r)
+    yield stream_message("refresh", _get_status(r))
     pubsub = r.pubsub()
     pubsub.subscribe("update")
-    for item in pubsub.listen():
-        if item["channel"] == "update":
-            yield _get_status(r)
+    while True:
+        # NOTE(sileht): heroku timeout is 55s, we have set gunicorn timeout to
+        # 60s, this assume 5s is enough for http and redis round strip and use
+        # 50s
+        message = pubsub.get_message(timeout=50.0)
+        if message is None:
+            yield stream_message("ping", "{}")
+        elif message["channel"] == "update":
+            yield stream_message("refresh", _get_status(r))
 
 
 @app.route('/status/stream')

@@ -25,7 +25,6 @@ import daiquiri
 from github import GithubException
 import redis
 import six
-from six.moves import urllib_parse as urlparse
 import ujson
 
 from pastamaker import config
@@ -42,11 +41,7 @@ def get_redis():
 
     if REDIS_CONNECTION is None:
         redis_url = os.getenv('REDISTOGO_URL')
-        urlparse.uses_netloc.append('redis')
-        url = urlparse.urlparse(redis_url)
-        REDIS_CONNECTION = redis.Redis(
-            host=url.hostname, port=url.port,
-            db=0, password=url.password)
+        REDIS_CONNECTION = redis.from_url(redis_url)
     return REDIS_CONNECTION
 
 
