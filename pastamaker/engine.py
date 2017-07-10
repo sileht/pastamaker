@@ -20,35 +20,11 @@ import operator
 import six.moves
 import ujson
 
+from pastamaker import gh_branch  # noqa
 from pastamaker import pr
 from pastamaker import utils
 
 LOG = logging.getLogger(__name__)
-
-
-def is_branch_protected_as_expected(repo, branch):
-    # NOTE(sileht): Can't get which permission I need to do this
-    return True
-
-    headers, data = repo._requester.requestJsonAndCheck(
-        "GET",
-        repo.url + "/branches/" + branch + "/protection",
-        headers={'Accept': 'application/vnd.github.loki-preview+json'}
-    )
-
-    del data["url"]
-    del data["required_pull_request_reviews"]["url"]
-    del data["required_status_checks"]["url"]
-    del data["required_status_checks"]["contexts_url"]
-    del data["enforce_admins"]["url"]
-
-    expected = {
-        'required_pull_request_reviews': {'dismiss_stale_reviews': True},
-        'required_status_checks': {'strict': True, 'contexts':
-                                   ['continuous-integration/travis-ci']},
-        'enforce_admins': {'enabled': True},
-    }
-    return data == expected
 
 
 class PastaMakerEngine(object):
@@ -102,13 +78,12 @@ class PastaMakerEngine(object):
 
         self.log_formated_event(event_type, incoming_pull, data)
 
-        if event_type == "refresh":
-            queues = self.get_pull_requests_queue(data["branch"])
-            if queues:
-                self.proceed_queues(queues)
-            return
-
-        if not incoming_pull:
+        current_branch = None
+        if incoming_pull:
+            current_branch = incoming_pull.base.ref
+        elif event_type == "refresh":
+            current_branch = data["branch"]
+        else:
             LOG.info("No pull request found in the event, ignoring")
             return
 
@@ -116,10 +91,14 @@ class PastaMakerEngine(object):
             # Don't compute the queue for nothing
             return
 
+        # FIXME(sileht): Need to figure out what permissions we need to do this
+        # and the header to use loki vs machine-man
+        # gh_branch.protect_if_needed(self._r, current_branch)
+
         # NOTE(sileht): We currently rebuild the queue on each event to
         # refresh the UI correctly. We obviously can be smarter, but we prefer
         # keeping it very simple for now
-        queues = self.get_pull_requests_queue(incoming_pull.base.ref)
+        queues = self.get_pull_requests_queue(current_branch)
         if queues:
             self.proceed_queues(queues)
         else:
