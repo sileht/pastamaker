@@ -116,30 +116,14 @@ class PastaMakerEngine(object):
             # Don't compute the queue for nothing
             return
 
+        # NOTE(sileht): We currently rebuild the queue on each event to
+        # refresh the UI correctly. We obviously can be smarter, but we prefer
+        # keeping it very simple for now
         queues = self.get_pull_requests_queue(incoming_pull.base.ref)
         if queues:
             self.proceed_queues(queues)
         else:
             LOG.info("Nothing queued, skipping the event")
-        return
-
-        if not queues:
-            LOG.info("Nothing queued, skipping the event")
-            return
-
-        if event_type == "status":
-            # We got a failure or a success, maybe we have something to do
-            self.proceed_queues(queues)
-
-        # Something change on our top PR
-        if incoming_pull.number == queues[0].number:
-            self.proceed_queues(queues)
-            return
-
-        if event_type == "pull_request" and data["action"] == "closed":
-            # A PR have been closed, process the queues
-            self.proceed_queues(queues)
-            return
 
     ###########################
     # State machine goes here #
