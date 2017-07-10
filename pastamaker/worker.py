@@ -23,7 +23,7 @@ import rq.worker
 
 from pastamaker import config
 from pastamaker import engine
-from pastamaker import pr
+from pastamaker import gh_pr
 from pastamaker import utils
 
 LOG = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def error_handler(job, *exc_info):
 
 def main():
     utils.setup_logging()
-    pr.monkeypatch_github()
+    gh_pr.monkeypatch_github()
     if config.FLUSH_REDIS_ON_STARTUP:
         utils.get_redis().flushall()
     with rq.Connection(utils.get_redis()):

@@ -21,7 +21,7 @@ import six.moves
 import ujson
 
 from pastamaker import gh_branch  # noqa
-from pastamaker import pr
+from pastamaker import gh_pr
 from pastamaker import utils
 
 LOG = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class PastaMakerEngine(object):
     def handle(self, event_type, data):
         # Everything start here
 
-        incoming_pull = pr.from_event(self._r, data)
+        incoming_pull = gh_pr.from_event(self._r, data)
         if not incoming_pull and event_type == "status":
             issues = list(self._g.search_issues("is:pr %s" % data["sha"]))
             if len(issues) >= 1:
