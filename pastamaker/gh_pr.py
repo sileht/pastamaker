@@ -124,17 +124,14 @@ def pastamaker_update_status(self):
         return need_update
 
 
-def _set_pastamaker_ci_statuses(p):
-    commit = p.base.repo.get_commit(p.head.sha)
-    statuses = {}
-    for s in commit.get_statuses():
-        statuses[s.context] = {"state": s.state, "url": s.target_url}
-
-
 @property
 def pastamaker_ci_statuses(self):
     if not hasattr(self, "_pastamaker_ci_statuses"):
-        _set_pastamaker_ci_statuses(self)
+        commit = self.base.repo.get_commit(self.head.sha)
+        statuses = {}
+        for s in commit.get_statuses():
+            statuses[s.context] = {"state": s.state, "url": s.target_url}
+        self._pastamaker_ci_statuses = statuses
     return self._pastamaker_ci_statuses
 
 
