@@ -93,7 +93,7 @@ def pastamaker_update_status(self):
         state = "failure"
         description = "%s changes requested" % requested_changes
     else:
-        state = "success" if approvals >= required else "failure"
+        state = "success" if approved >= required else "failure"
         description = "%s of %s required reviews" % (approved, required)
 
     commit = self.base.repo.get_commit(self.head.sha)
