@@ -19,6 +19,7 @@ import logging
 import time
 
 import github
+import six.moves
 
 from pastamaker import config
 # from pastamaker import gh_commit
@@ -145,25 +146,32 @@ def pastamaker_raw_data(self):
     data["approvals"] = self.approvals
     data["travis_state"] = self.travis_state
     data["travis_url"] = self.travis_url
+    data["missing_approvals"] = list(six.moves.range(
+        0, max(0, _get_approvals_config(self.base.repo.full_name,
+                                        self.base.ref)
+               - len(self.approvals[0]))))
     return data
 
 
 @property
 def approved(self):
-    return self.pastamaker_ci_statuses[
-        "pastamaker/reviewers"]["state"] == "success"
+    return self.pastamaker_ci_statuses.get(
+        "pastamaker/reviewers", {"state": "pending"}
+    )["state"] == "success"
 
 
 @property
 def travis_state(self):
-    return self.pastamaker_ci_statuses[
-        "continuous-integration/travis-ci/pr"]["state"]
+    return self.pastamaker_ci_statuses.get(
+        "continuous-integration/travis-ci/pr", {"state": "unknown"}
+    )["state"]
 
 
 @property
 def travis_url(self):
-    return self.pastamaker_ci_statuses[
-        "continuous-integration/travis-ci/pr"]["url"]
+    return self.pastamaker_ci_statuses.get(
+        "continuous-integration/travis-ci/pr", {"url": "#"}
+    )["url"]
 
 
 @property

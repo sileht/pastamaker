@@ -4,12 +4,10 @@
     padding: 100px;
     color: red;
 }
-td a img.avatar {
-    margin-right: 2px;
-    margin-bottom: 2px;
-}
 a.resolved { text-decoration: line-through !important; }
 img.avatar {
+    margin-right: 2px;
+    margin-bottom: 2px;
     border-radius: 3px;
     width: 24px;
     height: 24px;
