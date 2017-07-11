@@ -41,6 +41,16 @@ def mergeable_state_computed(self):
     return self.mergeable_state not in ["unknown", None]
 
 
+def _get_approvals_config(repo, branch):
+    for name in ["%s@%s" % (repo, branch), repo, "-@%s" % branch, "default"]:
+        if name in config.REQUIRED_APPROVALS:
+            required = int(config.REQUIRED_APPROVALS[name])
+            break
+    else:
+        required = int(config.REQUIRED_APPROVALS_DEFAULT)
+    return required
+
+
 @property
 def approvals(self):
     if not hasattr(self, "_pastamaker_approvals"):
@@ -70,31 +80,25 @@ def approvals(self):
                 LOG.error("%s FIXME review state unhandled: %s",
                           self.pretty(), review.state)
 
+        required = _get_approvals_config(self.base.repo.full_name,
+                                         self.base.ref)
+        # FIXME(sileht): Compute the thing on JS side
+        remaining = list(six.moves.range(max(0, required - len(reviews_ok))))
         self._pastamaker_approvals = ([users_info[u] for u in reviews_ok],
-                                      [users_info[u] for u in reviews_ko])
+                                      [users_info[u] for u in reviews_ko],
+                                      required, remaining)
     return self._pastamaker_approvals
 
 
-def _get_approvals_config(repo, branch):
-    for name in ["%s@%s" % (repo, branch), repo, "-@%s" % branch, "default"]:
-        if name in config.REQUIRED_APPROVALS:
-            required = int(config.REQUIRED_APPROVALS[name])
-            break
-    else:
-        required = int(config.REQUIRED_APPROVALS_DEFAULT)
-    return required
-
-
 def pastamaker_update_status(self):
+    approved = len(self.approvals[0])
     requested_changes = len(self.approvals[1])
+    required = self.approvals[2]
     if requested_changes != 0:
         state = "failure"
         description = "%s changes requested" % requested_changes
     else:
-        required = _get_approvals_config(self.base.repo.full_name,
-                                         self.base.ref)
-        approved = len(self.approvals[0])
-        state = "success" if approved >= required else "failure"
+        state = "success" if approvals >= required else "failure"
         description = "%s of %s required reviews" % (approved, required)
 
     commit = self.base.repo.get_commit(self.head.sha)
@@ -112,15 +116,19 @@ def pastamaker_update_status(self):
     if need_update:
         # NOTE(sileht): We can't use commit.create_status() because
         # if use the head repo instead of the base repo
-        self._requester.requestJsonAndCheck(
-            "POST",
-            self.base.repo.url + "/statuses/" + self.head.sha,
-            input={'state': state,
-                   'description': description,
-                   'context': "pastamaker/reviewers"},
-            headers={'Accept':
-                     'application/vnd.github.machine-man-preview+json'}
-        )
+        try:
+            self._requester.requestJsonAndCheck(
+                "POST",
+                self.base.repo.url + "/statuses/" + self.head.sha,
+                input={'state': state,
+                       'description': description,
+                       'context': "pastamaker/reviewers"},
+                headers={'Accept':
+                         'application/vnd.github.machine-man-preview+json'}
+            )
+        except github.GithubException as e:
+            LOG.exception("%s set status fail: %s",
+                          self.pretty(), e.data["message"])
         return need_update
 
 
@@ -140,13 +148,9 @@ def pastamaker_raw_data(self):
     data = copy.deepcopy(self.raw_data)
     data["pastamaker_ci_statuses"] = self.pastamaker_ci_statuses
     data["pastamaker_weight"] = self.pastamaker_weight
-    data["approvals"] = self.approvals
     data["travis_state"] = self.travis_state
     data["travis_url"] = self.travis_url
-    data["missing_approvals"] = list(six.moves.range(
-        0, max(0, _get_approvals_config(self.base.repo.full_name,
-                                        self.base.ref)
-               - len(self.approvals[0]))))
+    data["approvals"] = self.approvals
     return data
 
 
