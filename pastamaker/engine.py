@@ -70,6 +70,13 @@ class PastaMakerEngine(object):
     def handle(self, event_type, data):
         # Everything start here
 
+        if event_type == "status":
+            # Don't compute the queue for nothing
+            if data["context"].startswith("pastamaker/"):
+                return
+            elif data["state"] == "pending":
+                return
+
         incoming_pull = gh_pr.from_event(self._r, data)
         if not incoming_pull and event_type == "status":
             issues = list(self._g.search_issues("is:pr %s" % data["sha"]))
@@ -96,13 +103,6 @@ class PastaMakerEngine(object):
         if need_status_update and incoming_pull:
             if not incoming_pull.pastamaker_update_status():
                 # Status not updated, don't need to update the queue
-                return
-
-        if event_type == "status":
-            # Don't compute the queue for nothing
-            if data["context"].startswith("pastamaker/"):
-                return
-            elif data["state"] == "pending":
                 return
 
         if event_type == "refresh":
