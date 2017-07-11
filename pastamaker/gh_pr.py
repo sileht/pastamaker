@@ -132,7 +132,9 @@ def pastamaker_ci_statuses(self):
     if not hasattr(self, "_pastamaker_ci_statuses"):
         commit = self.base.repo.get_commit(self.head.sha)
         statuses = {}
-        for s in commit.get_statuses():
+        # NOTE(sileht): Statuses are returned in reverse chronological order.
+        # The first status in the list will be the latest one.
+        for s in reversed(list(commit.get_statuses())):
             statuses[s.context] = {"state": s.state, "url": s.target_url}
         self._pastamaker_ci_statuses = statuses
     return self._pastamaker_ci_statuses
