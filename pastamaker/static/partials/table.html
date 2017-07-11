@@ -46,10 +46,10 @@
              <td class="state"><a href="{{ pull.html_url }}/files" target="_blank">{{ pull.changed_files }}</a></td>
              <td class="last-updated"><time am-time-ago="pull.updated_at"></time></td>
              <td class="state">
-                 <a href="{{ pull.ci_target_url }}">
-                     <span ng-if="pull.ci_status == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
-                     <span ng-if="pull.ci_status == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
-                     <span ng-if="pull.ci_status == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
+                 <a href="{{ pull.travis_url }}">
+                     <span ng-if="pull.travis == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
+                     <span ng-if="pull.travis == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
+                     <span ng-if="pull.travis == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
                  </a>
             </td>
              <td class="reviews info">

@@ -84,12 +84,6 @@ def _get_approvals_config(repo, branch):
     return required
 
 
-@property
-def approved(self):
-    required = _get_approvals_config(self.base.repo.full_name, self.base.ref)
-    return len(self.approvals[0]) >= required and len(self.approvals[1]) == 0
-
-
 def pastamaker_update_status(self):
     requested_changes = len(self.approvals[1])
     if requested_changes != 0:
@@ -111,8 +105,8 @@ def pastamaker_update_status(self):
     else:
         need_update = True
 
-    LOG.info("%s status check %s/%s/%s" % (
-        self.pretty(), state, description, need_update))
+    # LOG.info("%s status check %s/%s/%s" % (
+    #    self.pretty(), state, description, need_update))
 
     if need_update:
         # NOTE(sileht): We can't use commit.create_status() because
@@ -129,42 +123,47 @@ def pastamaker_update_status(self):
         return need_update
 
 
-def _set_ci_status(p):
-    # TODO(sileht): Return the list of status for the UI
+def _set_pastamaker_ci_statuses(p):
     commit = p.base.repo.get_commit(p.head.sha)
+    statuses = {}
     for s in commit.get_statuses():
-        if not s.context.startswith("pastamaker/"):
-            p._pastamaker_ci_status = s.state
-            p._pastamaker_ci_target_url = s.target_url
-            break
-    else:
-        p._pastamaker_ci_status = "pending"
-        p._pastamaker_ci_target_url = "#"
+        statuses[s.context] = {"state": s.state, "url": s.target_url}
 
 
 @property
-def ci_status(self):
-    # Only work for PR with less than 250 commites
-    if not hasattr(self, "_pastamaker_ci_status"):
-        _set_ci_status(self)
-    return self._pastamaker_ci_status
-
-
-@property
-def ci_target_url(self):
-    if not hasattr(self, "_pastamaker_ci_target_url"):
-        _set_ci_status(self)
-    return self._pastamaker_ci_target_url
+def pastamaker_ci_statuses(self):
+    if not hasattr(self, "_pastamaker_ci_statuses"):
+        _set_pastamaker_ci_statuses(self)
+    return self._pastamaker_ci_statuses
 
 
 @property
 def pastamaker_raw_data(self):
     data = copy.deepcopy(self.raw_data)
-    data["ci_status"] = self.ci_status
-    data["ci_target_url"] = self.ci_target_url
+    data["pastamaker_ci_statuses"] = self.pastamaker_ci_statuses
     data["pastamaker_weight"] = self.pastamaker_weight
     data["approvals"] = self.approvals
+    data["travis_state"] = self.travis_state
+    data["travis_url"] = self.travis_url
     return data
+
+
+@property
+def approved(self):
+    return self.pastamaker_ci_statuses[
+        "pastamaker/reviewers"]["state"] == "success"
+
+
+@property
+def travis_state(self):
+    return self.pastamaker_ci_statuses[
+        "continuous-integration/travis-ci/pr"]["state"]
+
+
+@property
+def travis_url(self):
+    return self.pastamaker_ci_statuses[
+        "continuous-integration/travis-ci/pr"]["url"]
 
 
 @property
@@ -173,14 +172,14 @@ def pastamaker_weight(self):
         if not self.approved:
             weight = -1
         elif (self.mergeable_state == "clean"
-              and self.ci_status == "success"
+              and self.travis_state == "success"
               and self.update_branch_state == "clean"):
             # Best PR ever, up2date and CI OK
             weight = 11
         elif self.mergeable_state == "clean":
             weight = 10
         elif (self.mergeable_state == "blocked"
-              and self.ci_status == "pending"
+              and self.travis_state == "pending"
               and self.update_branch_state == "clean"):
             # Maybe clean soon, or maybe this is the previous run
             # selected PR that we just rebase
@@ -188,9 +187,9 @@ def pastamaker_weight(self):
         elif (self.mergeable_state == "behind"
               and self.update_branch_state not in ["unknown", "dirty"]):
             # Not up2date, but ready to merge, is branch updatable
-            if self.ci_status == "success":
+            if self.travis_state == "success":
                 weight = 7
-            elif self.ci_status == "pending":
+            elif self.travis_state == "pending":
                 weight = 5
             else:
                 weight = -1
@@ -198,14 +197,14 @@ def pastamaker_weight(self):
             weight = -1
         self._pastamaker_weight = weight
         # LOG.info("%s prio: %s, %s, %s, %s, %s", self.pretty(), weight,
-        #          self.approved, self.mergeable_state, self.ci_status,
+        #          self.approved, self.mergeable_state, self.travis_state,
         #          self.update_branch_state)
     return self._pastamaker_weight
 
 
 def pastamaker_update(self, force=False):
     for attr in ["_pastamaker_weight",
-                 "_pastamaker_ci_status",
+                 "_pastamaker_ci_statuses",
                  "_pastamaker_ci_target_url",
                  "_pastamaker_approvals"]:
         if hasattr(self, attr):
@@ -272,14 +271,17 @@ def monkeypatch_github():
     p.pretty = pretty
     p.mergeable_state_computed = mergeable_state_computed
     p.approvals = approvals
+    p.pastamaker_ci_statuses = pastamaker_ci_statuses
+    p.travis_state = travis_state
+    p.travis_url = travis_url
     p.approved = approved
-    p.ci_status = ci_status
-    p.ci_target_url = ci_target_url
+
     p.pastamaker_update = pastamaker_update
     p.pastamaker_merge = pastamaker_merge
+    p.pastamaker_update_status = pastamaker_update_status
+
     p.pastamaker_weight = pastamaker_weight
     p.pastamaker_raw_data = pastamaker_raw_data
-    p.pastamaker_update_status = pastamaker_update_status
 
     # Missing Github API
     p.update_branch = webhack.web_github_update_branch

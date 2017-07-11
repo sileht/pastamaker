@@ -113,6 +113,7 @@ class PastaMakerEngine(object):
         if event_type == "refresh":
             for pr in queues:
                 pr.pastamaker_update_status()
+            queues = self.get_pull_requests_queue(current_branch)
 
         self.set_cache_queues(current_branch, queues)
         if queues:
@@ -138,7 +139,7 @@ class PastaMakerEngine(object):
         if p.approved:
             LOG.info("%s, processing...", p.pretty())
 
-            if p.ci_status == "pending":
+            if p.travis_state == "pending":
                 LOG.info("%s waiting for CI completion", p.pretty())
                 return
 
@@ -151,7 +152,7 @@ class PastaMakerEngine(object):
 
             # Have CI ok, at least 1 approval, but branch need to be updated
             elif p.mergeable_state == "behind":
-                if p.ci_status == "success":
+                if p.travis_state == "success":
                     # rebase it and wait the next pull_request event
                     # (synchronize)
                     if p.update_branch():
@@ -177,7 +178,7 @@ class PastaMakerEngine(object):
     def dump_pulls_state(self, branch, pulls):
         for p in pulls:
             LOG.info("%s, %s, %s, base-sha: %s, head-sha: %s)",
-                     p.pretty(), p.ci_status,
+                     p.pretty(), p.travis_state,
                      p.created_at, p.base.sha, p.head.sha)
 
     def get_pull_requests_queue(self, branch):
