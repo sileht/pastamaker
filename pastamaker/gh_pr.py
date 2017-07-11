@@ -157,7 +157,7 @@ def pastamaker_raw_data(self):
 @property
 def approved(self):
     return self.pastamaker_ci_statuses.get(
-        "pastamaker/reviewers", {"state": "pending"}
+        "pastamaker/reviewers", {"state": "unknown"}
     )["state"] == "success"
 
 
