@@ -47,9 +47,9 @@
              <td class="last-updated"><time am-time-ago="pull.updated_at"></time></td>
              <td class="state">
                  <a href="{{ pull.travis_url }}">
-                     <span ng-if="pull.travis == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
-                     <span ng-if="pull.travis == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
-                     <span ng-if="pull.travis == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
+                     <span ng-if="pull.travis_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
+                     <span ng-if="pull.travis_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
+                     <span ng-if="pull.travis_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
                  </a>
             </td>
              <td class="reviews info">
@@ -58,7 +58,7 @@
                     target="_blank"
                     title="{{ user.login }}"><img ng-src="{{ user.avatar_url }}" class="avatar" alt="{{ user.login }}"></a>
                  <div ng-repeat="n in pull.approvals[3]">
-                     <img class="avatar" style="border:1px dotted grey" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA"/>
+                     <img class="avatar" style="border:1px dashed white; background-color: #e2f1f9;" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA"/>
                  </div>
              </td>
              <td class="reviews warning">
