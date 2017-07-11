@@ -96,6 +96,10 @@ def pastamaker_update_status(self):
         state = "success" if approved >= required else "failure"
         description = "%s of %s required reviews" % (approved, required)
 
+    # TODO(sileht): Rethink this later, this put the pull request
+    # is error state while, the CI pass, this looks not good
+    state = "success"
+
     commit = self.base.repo.get_commit(self.head.sha)
     for s in commit.get_statuses():
         if s.context == "pastamaker/reviewers":
@@ -104,9 +108,6 @@ def pastamaker_update_status(self):
             break
     else:
         need_update = True
-
-    # LOG.info("%s status check %s/%s/%s" % (
-    #    self.pretty(), state, description, need_update))
 
     if need_update:
         # NOTE(sileht): We can't use commit.create_status() because
@@ -124,7 +125,7 @@ def pastamaker_update_status(self):
         except github.GithubException as e:
             LOG.exception("%s set status fail: %s",
                           self.pretty(), e.data["message"])
-        return need_update
+    return need_update
 
 
 @property
@@ -153,9 +154,13 @@ def pastamaker_raw_data(self):
 
 @property
 def approved(self):
-    return self.pastamaker_ci_statuses.get(
-        "pastamaker/reviewers", {"state": "unknown"}
-    )["state"] == "success"
+    approved = len(self.approvals[0])
+    requested_changes = len(self.approvals[1])
+    required = self.approvals[2]
+    if requested_changes != 0:
+        return False
+    else:
+        return approved >= required
 
 
 @property
