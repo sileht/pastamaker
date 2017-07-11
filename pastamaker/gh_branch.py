@@ -21,12 +21,13 @@ LOG = logging.getLogger(__name__)
 
 def is_protected(g_repo, branch):
     g_branch = g_repo.get_protected_branch(branch)
-    if not g_branch['protected']:
+    if not g_branch.protected:
         return False
 
     headers, data = g_repo._requester.requestJsonAndCheck(
         "GET", g_repo.url + "/branches/" + branch + '/protection',
-        headers={'Accept': 'application/vnd.github.loki-preview+json'}
+        headers={'Accept': 'application/vnd.github.loki-preview+json, '
+                 'application/vnd.github.machine-man-preview+json'}
     )
 
     # NOTE(sileht): delete urls from the payload
@@ -74,7 +75,8 @@ def protect(g_repo, branch):
             'restrictions': None,
             'enforce_admins': True,
         },
-        headers={'Accept': 'application/vnd.github.loki-preview+json'}
+        headers={'Accept': 'application/vnd.github.loki-preview+json, '
+                 'application/vnd.github.machine-man-preview+json'}
     )
 
 

@@ -33,7 +33,7 @@ Permissions
 
 ::
 
-    Commit statuses - ReadOnly
+    Commit statuses - ReadWrite
 
       [x] Status
 

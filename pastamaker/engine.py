@@ -92,7 +92,6 @@ class PastaMakerEngine(object):
             return
 
         # FIXME(sileht): Need to figure out what permissions we need to do this
-        # and the header to use loki vs machine-man
         # gh_branch.protect_if_needed(self._r, current_branch)
 
         # NOTE(sileht): We currently rebuild the queue on each event to
