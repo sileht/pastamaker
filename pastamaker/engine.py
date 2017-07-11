@@ -87,12 +87,23 @@ class PastaMakerEngine(object):
             LOG.info("No pull request found in the event, ignoring")
             return
 
-        if event_type == "status" and data["state"] == "pending":
-            # Don't compute the queue for nothing
-            return
-
         # FIXME(sileht): Need to figure out what permissions we need to do this
         # gh_branch.protect_if_needed(self._r, current_branch)
+
+        need_status_update = ((event_type == "pull_request"
+                               and data["action"] == "opened")
+                              or event_type == "pull_request_review")
+        if need_status_update:
+            if not incoming_pull.pastamaker_update_status():
+                # Status not updated, don't need to update the queue
+                return
+
+        if event_type == "status":
+            # Don't compute the queue for nothing
+            if data["context"].startswith("pastamaker/"):
+                return
+            elif data["state"] == "pending":
+                return
 
         # NOTE(sileht): We currently rebuild the queue on each event to
         # refresh the UI correctly. We obviously can be smarter, but we prefer

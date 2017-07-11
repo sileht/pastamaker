@@ -21,6 +21,7 @@ import time
 import github
 
 from pastamaker import config
+# from pastamaker import gh_commit
 from pastamaker import webhack
 
 LOG = logging.getLogger(__name__)
@@ -73,27 +74,71 @@ def approvals(self):
     return self._pastamaker_approvals
 
 
-@property
-def approved(self):
-    repo = self.base.repo.full_name
-    branch = self.base.ref
+def _get_approvals_config(repo, branch):
     for name in ["%s@%s" % (repo, branch), repo, "-@%s" % branch, "default"]:
         if name in config.REQUIRED_APPROVALS:
             required = int(config.REQUIRED_APPROVALS[name])
             break
     else:
         required = int(config.REQUIRED_APPROVALS_DEFAULT)
+    return required
+
+
+@property
+def approved(self):
+    required = _get_approvals_config(self.base.repo.full_name, self.base.ref)
     return len(self.approvals[0]) >= required and len(self.approvals[1]) == 0
 
 
-def _set_ci_status(p):
-    commit = p.base.repo.get_commit(p.head.sha)
-    status = commit.get_combined_status()
-    p._pastamaker_ci_status = status.state
-    if status.statuses:
-        # Assume we have only one CI
-        p._pastamaker_ci_target_url = status.statuses[0].target_url
+def pastamaker_update_status(self):
+    requested_changes = len(self.approvals[1])
+    if requested_changes != 0:
+        state = "failure"
+        description = "%s changes requested" % requested_changes
     else:
+        required = _get_approvals_config(self.base.repo.full_name,
+                                         self.base.ref)
+        approved = len(self.approvals[0])
+        state = "success" if approved >= required else "pending"
+        description = "%s of %s required reviews" % (approved, required)
+
+    commit = self.base.repo.get_commit(self.head.sha)
+    for s in commit.get_statuses():
+        if s.context == "pastamaker/reviewers":
+            need_update = (s.state != state or
+                           s.description != description)
+            break
+    else:
+        need_update = True
+
+    LOG.info("%s status check %s/%s/%s" % (
+        self.pretty(), state, description, need_update))
+
+    if need_update:
+        # NOTE(sileht): We can't use commit.create_status() because
+        # if use the head repo instead of the base repo
+        self._requester.requestJsonAndCheck(
+            "POST",
+            self.base.repo.url + "/statuses/" + self.head.sha,
+            input={'state': state,
+                   'description': description,
+                   'context': "pastamaker/reviewers"},
+            headers={'Accept':
+                     'application/vnd.github.machine-man-preview+json'}
+        )
+        return need_update
+
+
+def _set_ci_status(p):
+    # TODO(sileht): Return the list of status for the UI
+    commit = p.base.repo.get_commit(p.head.sha)
+    for s in commit.get_statuses():
+        if not s.context.startswith("pastamaker/"):
+            p._pastamaker_ci_status = s.state
+            p._pastamaker_ci_target_url = s.target_url
+            break
+    else:
+        p._pastamaker_ci_status = "pending"
         p._pastamaker_ci_target_url = "#"
 
 
@@ -235,6 +280,7 @@ def monkeypatch_github():
     p.pastamaker_merge = pastamaker_merge
     p.pastamaker_weight = pastamaker_weight
     p.pastamaker_raw_data = pastamaker_raw_data
+    p.pastamaker_update_status = pastamaker_update_status
 
     # Missing Github API
     p.update_branch = webhack.web_github_update_branch
