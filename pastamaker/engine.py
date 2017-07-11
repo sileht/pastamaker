@@ -136,35 +136,19 @@ class PastaMakerEngine(object):
         # NOTE(sileht): This also refresh the PR, following code expects the
         # mergeable_state is up2date
 
-        if p.approved:
-            LOG.info("%s, processing...", p.pretty())
+        if p.mergeable_state == "clean":
+            if p.pastamaker_merge():
+                LOG.info("%s merged", p.pretty())
+                # Wait for the closed event now
 
-            if p.travis_state == "pending":
-                LOG.info("%s waiting for CI completion", p.pretty())
-                return
-
-            # Everything looks good
-            elif p.mergeable_state == "clean":
-                if p.pastamaker_merge():
-                    LOG.info("%s merged", p.pretty())
-                    # Wait for the closed event
-                    return
-
-            # Have CI ok, at least 1 approval, but branch need to be updated
-            elif p.mergeable_state == "behind":
-                if p.travis_state == "success":
-                    # rebase it and wait the next pull_request event
-                    # (synchronize)
-                    if p.update_branch():
-                        LOG.info("%s branch updated", p.pretty())
-                        return
-
-            elif p.mergeable_state in ["unstable", "dirty", "ok"]:
-                LOG.info("%s, unmergable", p.pretty())
-
-            else:
-                LOG.warning("%s, FIXME unhandled mergeable_state",
-                            p.pretty())
+        elif p.mergeable_state == "behind":
+            commit = self._r.get_commit(p.head.ref)
+            status = commit.get_combined_status()
+            if status.state == "success":
+                # rebase it and wait the next pull_request event
+                # (synchronize)
+                if p.update_branch():
+                    LOG.info("%s branch updated", p.pretty())
 
     def set_cache_queues(self, branch, pulls):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
