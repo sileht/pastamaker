@@ -91,7 +91,7 @@ class PastaMakerEngine(object):
         # gh_branch.protect_if_needed(self._r, current_branch)
 
         need_status_update = ((event_type == "pull_request"
-                               and data["action"] == "opened")
+                               and data["action"] in ["opened", "synchronize"])
                               or event_type == "pull_request_review")
         if need_status_update:
             if not incoming_pull.pastamaker_update_status():
