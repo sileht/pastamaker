@@ -58,9 +58,9 @@
                     href="{{ user.html_url }}"
                     target="_blank"
                     title="{{ user.login }}"><img ng-src="{{ user.avatar_url }}" class="avatar" alt="{{ user.login }}"></a>
-                 <div ng-repeat="n in pull.approvals[3]">
+                 <span ng-repeat="n in pull.approvals[3]">
                      <img class="avatar" style="border:1px dashed white; background-color: #e2f1f9;" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA"/>
-                 </div>
+                 </span>
              </td>
              <td class="reviews warning">
                  <a ng-repeat="user in pull.approvals[1]"

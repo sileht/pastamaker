@@ -62,7 +62,8 @@ table.multiple .last-updated {
     width: 110px;
 }
 table.multiple .reviews {
-    width: 70px;
+    padding-right: 3px;
+    width: 64px;
 }
 table.multiple .queue {
     width: 35px;
