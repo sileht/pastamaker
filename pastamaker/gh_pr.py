@@ -99,7 +99,7 @@ def pastamaker_update_status(self):
         required = _get_approvals_config(self.base.repo.full_name,
                                          self.base.ref)
         approved = len(self.approvals[0])
-        state = "success" if approved >= required else "pending"
+        state = "success" if approved >= required else "failure"
         description = "%s of %s required reviews" % (approved, required)
 
     commit = self.base.repo.get_commit(self.head.sha)
@@ -164,7 +164,6 @@ def pastamaker_raw_data(self):
     data["ci_target_url"] = self.ci_target_url
     data["pastamaker_weight"] = self.pastamaker_weight
     data["approvals"] = self.approvals
-    data["approved"] = self.approved
     return data
 
 

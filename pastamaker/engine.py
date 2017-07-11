@@ -109,6 +109,12 @@ class PastaMakerEngine(object):
         # refresh the UI correctly. We obviously can be smarter, but we prefer
         # keeping it very simple for now
         queues = self.get_pull_requests_queue(current_branch)
+
+        if event_type == "refresh":
+            for pr in queues:
+                pr.pastamaker_update_status()
+
+        self.set_cache_queues(current_branch, queues)
         if queues:
             self.proceed_queues(queues)
         else:
@@ -183,7 +189,6 @@ class PastaMakerEngine(object):
         pulls = self._r.get_pulls(sort="created", direction="asc", base=branch)
         pulls = six.moves.map(lambda p: p.pastamaker_update(), pulls)
         pulls = list(sorted(pulls, key=sort_key, reverse=True))
-        self.set_cache_queues(branch, pulls)
         self.dump_pulls_state(branch, pulls)
         LOG.info("%s, %s pull request(s)" %
                  (self._get_logprefix(branch), len(pulls)))
