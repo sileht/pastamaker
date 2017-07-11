@@ -86,23 +86,29 @@ def refresh_all():
 
     integration = github.GithubIntegration(config.INTEGRATION_ID,
                                            config.PRIVATE_KEY)
+
+    counts = [0, 0, 0]
     for install in utils.get_installations(integration):
+        counts[0] += 1
         token = integration.get_access_token(install["id"]).token
         g = github.Github(token)
         i = g.get_installation(install["id"])
 
         for repo in i.get_repos():
+            counts[1] += 1
             pulls = repo.get_pulls()
-            branches = [p.base.ref for p in pulls]
+            branches = set([p.base.ref for p in pulls])
 
             # Mimic the github event format
             for branch in branches:
+                counts[2] += 1
                 get_queue().enqueue(worker.event_handler, "refresh", {
                     'repository': repo.raw_data,
                     'installation': {'id': install['id']},
                     'branch': branch,
                 })
-    return "", 202
+    return ("Updated %s installations, %s repositories, "
+            "%s branches" % tuple(counts)), 202
 
 
 @app.route("/queue/<owner>/<repo>/<path:branch>")

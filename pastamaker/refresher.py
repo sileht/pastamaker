@@ -36,6 +36,7 @@ def refresh(slug=None):
                       headers={"X-Hub-Signature": "sha1=" + hmac},
                       data=data)
     r.raise_for_status()
+    print(r.text)
 
 
 def main():
