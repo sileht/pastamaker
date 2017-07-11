@@ -93,7 +93,7 @@ class PastaMakerEngine(object):
         need_status_update = ((event_type == "pull_request"
                                and data["action"] in ["opened", "synchronize"])
                               or event_type == "pull_request_review")
-        if need_status_update:
+        if need_status_update and incoming_pull:
             if not incoming_pull.pastamaker_update_status():
                 # Status not updated, don't need to update the queue
                 return
@@ -105,15 +105,11 @@ class PastaMakerEngine(object):
             elif data["state"] == "pending":
                 return
 
-        # NOTE(sileht): We currently rebuild the queue on each event to
-        # refresh the UI correctly. We obviously can be smarter, but we prefer
-        # keeping it very simple for now
-        queues = self.get_pull_requests_queue(current_branch)
-
         if event_type == "refresh":
-            for pr in queues:
-                pr.pastamaker_update_status()
-            queues = self.get_pull_requests_queue(current_branch)
+            for p in self._r.get_pulls(base=current_branch):
+                p.pastamaker_update_status()
+
+        queues = self.get_pull_requests_queue(current_branch)
 
         self.set_cache_queues(current_branch, queues)
         if queues:

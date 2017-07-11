@@ -36,11 +36,6 @@ def pretty(self):
         len(self.approvals[0]))
 
 
-@property
-def mergeable_state_computed(self):
-    return self.mergeable_state not in ["unknown", None]
-
-
 def _get_approvals_config(repo, branch):
     for name in ["%s@%s" % (repo, branch), repo, "-@%s" % branch, "default"]:
         if name in config.REQUIRED_APPROVALS:
@@ -214,23 +209,22 @@ def pastamaker_weight(self):
 def pastamaker_update(self, force=False):
     for attr in ["_pastamaker_weight",
                  "_pastamaker_ci_statuses",
-                 "_pastamaker_ci_target_url",
                  "_pastamaker_approvals"]:
         if hasattr(self, attr):
             delattr(self, attr)
 
-    if not force and self.mergeable_state_computed:
+    if not force and self.mergeable_state not in ["unknown", None]:
         return self
 
     # Github is currently processing this PR, we wait the completion
     while True:
-        LOG.info("%s, refreshing...", self.pretty())
+        LOG.debug("%s, refreshing...", self.pretty())
         self.update()
-        if self.mergeable_state_computed:
+        if self.mergeable_state not in ["unknown", None]:
             break
-        time.sleep(0.42)  # you known, this one always work
+        time.sleep(0.042)  # you known, this one always work
 
-    LOG.info("%s, refreshed", self.pretty())
+    LOG.debug("%s, refreshed", self.pretty())
     return self
 
 
@@ -277,18 +271,18 @@ def from_event(repo, data):
 
 def monkeypatch_github():
     p = github.PullRequest.PullRequest
+
     p.pretty = pretty
-    p.mergeable_state_computed = mergeable_state_computed
-    p.approvals = approvals
-    p.pastamaker_ci_statuses = pastamaker_ci_statuses
     p.travis_state = travis_state
     p.travis_url = travis_url
     p.approved = approved
+    p.approvals = approvals
 
     p.pastamaker_update = pastamaker_update
     p.pastamaker_merge = pastamaker_merge
     p.pastamaker_update_status = pastamaker_update_status
 
+    p.pastamaker_ci_statuses = pastamaker_ci_statuses
     p.pastamaker_weight = pastamaker_weight
     p.pastamaker_raw_data = pastamaker_raw_data
 
