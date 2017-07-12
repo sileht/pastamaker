@@ -135,7 +135,7 @@ class PastaMakerEngine(object):
                 # Wait for the closed event now
 
         elif p.mergeable_state == "behind":
-            commit = self._r.get_commit(p.head.ref)
+            commit = self._r.get_commit(p.head.sha)
             status = commit.get_combined_status()
             if status.state == "success":
                 # rebase it and wait the next pull_request event
