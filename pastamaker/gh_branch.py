@@ -23,7 +23,7 @@ from pastamaker import config
 LOG = logging.getLogger(__name__)
 
 
-def is_protected(g_repo, branch):
+def is_protected(g_repo, branch, enforce_admins):
     # FIXME(sileht): I have asked Github about why this API doesn't work
     # with integration token. Use the webhack user as workaround
     # https://platform.github.community/t/branches-protection-api/2480
@@ -59,7 +59,7 @@ def is_protected(g_repo, branch):
             'contexts': ['continuous-integration/travis-ci'],
         },
         'enforce_admins': {
-            "enabled": True
+            "enabled": enforce_admins
         }
     }
 
@@ -70,7 +70,7 @@ def is_protected(g_repo, branch):
     return ret
 
 
-def protect(g_repo, branch):
+def protect(g_repo, branch, enforce_admins):
     # FIXME(sileht): I have asked Github about why this API doesn't work
     # with integration token. Use the webhack user as workaround
     # https://platform.github.community/t/branches-protection-api/2480
@@ -95,14 +95,17 @@ def protect(g_repo, branch):
                 'contexts': ['continuous-integration/travis-ci'],
             },
             'restrictions': None,
-            'enforce_admins': True,
+            'enforce_admins': enforce_admins,
         },
         headers={'Accept': 'application/vnd.github.loki-preview+json'}
     )
 
 
 def protect_if_needed(g_repo, branch):
-    if not is_protected(g_repo, branch):
+    enforce_admins = config.get_value_from(config.BRANCH_PROTECTION,
+                                           g_repo.full_name,
+                                           branch, bool)
+    if not is_protected(g_repo, branch, enforce_admins):
         LOG.warning("Branch %s of %s is misconfigured, configuring it",
-                    branch, g_repo.full_name)
+                    branch, g_repo.full_name, enforce_admins)
         protect(g_repo, branch)

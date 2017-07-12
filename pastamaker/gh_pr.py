@@ -37,13 +37,7 @@ def pretty(self):
 
 
 def _get_approvals_config(repo, branch):
-    for name in ["%s@%s" % (repo, branch), repo, "-@%s" % branch, "default"]:
-        if name in config.REQUIRED_APPROVALS:
-            required = int(config.REQUIRED_APPROVALS[name])
-            break
-    else:
-        required = int(config.REQUIRED_APPROVALS_DEFAULT)
-    return required
+    return config.get_value_from(config.REQUIRED_APPROVALS, repo, branch, int)
 
 
 @property

@@ -19,7 +19,7 @@ import os
 import yaml
 
 with open("config.yml") as f:
-    REQUIRED_APPROVALS_CONFIG = f.read()
+    CONFIG = yaml.load(f.read())
 
 _CONFIG = {
     "INTEGRATION_ID": None,
@@ -31,7 +31,8 @@ _CONFIG = {
     "BASE_URL": None,
     "FLUSH_REDIS_ON_STARTUP": False,
     "REQUIRED_APPROVALS_DEFAULT": 2,
-    "REQUIRED_APPROVALS": dict(yaml.load(REQUIRED_APPROVALS_CONFIG)),
+    "REQUIRED_APPROVALS": CONFIG["reviews"],
+    "BRANCH_PROTECTION": CONFIG["branch_protection"],
 }
 
 print("**********************************************************")
@@ -46,3 +47,13 @@ for name, default in _CONFIG.items():
         value = "*****"
     print("* PASTAMAKER_%s=%s" % (name, value))
 print("**********************************************************")
+
+
+def get_value_from(config_options, repo, branch, _type):
+    for name in ["%s@%s" % (repo, branch), repo, "-@%s" % branch, "default"]:
+        if name in config_options:
+            value = _type(config_options[name])
+            break
+    else:
+        value = _type(config_options)
+    return value
