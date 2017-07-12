@@ -94,8 +94,8 @@ class PastaMakerEngine(object):
             LOG.info("No pull request found in the event, ignoring")
             return
 
-        # FIXME(sileht): Need to figure out what permissions we need to do this
-        # gh_branch.protect_if_needed(self._r, current_branch)
+        # protect the branch before doing anything
+        gh_branch.protect_if_needed(self._r, current_branch)
 
         need_status_update = ((event_type == "pull_request"
                                and data["action"] in ["opened", "synchronize"])
@@ -128,9 +128,6 @@ class PastaMakerEngine(object):
         """
 
         p = queues[0]
-
-        # NOTE(sileht): This also refresh the PR, following code expects the
-        # mergeable_state is up2date
 
         if p.mergeable_state == "clean":
             if p.pastamaker_merge():

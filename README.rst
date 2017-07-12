@@ -73,20 +73,21 @@ Heroku Setup
     # trigger refresh manually or to configure the scheduler
     heroku run python pastamaker/refresher.py
 
-Github Projects Branch protections expectation
-==============================================
+Github Projects Branch protections setuped by pastamaker
+========================================================
 
 .. code-block:: json
 
-        {
-            'required_pull_request_reviews': {
-                "dismissal_restrictions": {},
-                "dismiss_stale_reviews": True,
-            },
-            'required_status_checks': {
-                'strict': True,
-                'contexts': ['continuous-integration/travis-ci'],
-            },
-            'restrictions': None,
-            'enforce_admins': True,
+    {
+        'required_pull_request_reviews': {
+            "dismiss_stale_reviews": True,
+            "require_core_owner_reviews": True,
         },
+        'required_status_checks': {
+            'strict': True,
+            'contexts': ['continuous-integration/travis-ci'],
+        },
+        'enforce_admins': {
+            "enabled": True
+        }
+    }

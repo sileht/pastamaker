@@ -16,12 +16,24 @@
 
 import logging
 
+import github
+
+from pastamaker import config
+
 LOG = logging.getLogger(__name__)
 
 
 def is_protected(g_repo, branch):
+    # FIXME(sileht): I have asked Github about why this API doesn't work
+    # with integration token. Use the webhack user as workaround
+    # https://platform.github.community/t/branches-protection-api/2480
+    g = github.Github(config.WEBHACK_USERNAME, config.WEBHACK_PASSWORD)
+    g_repo = g.get_repo(g_repo.full_name)
+
     g_branch = g_repo.get_protected_branch(branch)
     if not g_branch.protected:
+        LOG.info("Protection of branch %s of %s is disabled"
+                 % (branch, g_repo.full_name))
         return False
 
     headers, data = g_repo._requester.requestJsonAndCheck(
@@ -40,7 +52,7 @@ def is_protected(g_repo, branch):
     excepted = {
         'required_pull_request_reviews': {
             "dismiss_stale_reviews": True,
-            "require_core_owner_reviews": True,
+            "require_code_owner_reviews": False,
         },
         'required_status_checks': {
             'strict': True,
@@ -51,10 +63,20 @@ def is_protected(g_repo, branch):
         }
     }
 
-    return excepted == data
+    ret = excepted == data
+    if not ret:
+        LOG.info("Protection of branch %s of %s is unexpected:\n%s\n\n"
+                 "*vs* \n\n%s" % (branch, g_repo.full_name, excepted, data))
+    return ret
 
 
 def protect(g_repo, branch):
+    # FIXME(sileht): I have asked Github about why this API doesn't work
+    # with integration token. Use the webhack user as workaround
+    # https://platform.github.community/t/branches-protection-api/2480
+    g = github.Github(config.WEBHACK_USERNAME, config.WEBHACK_PASSWORD)
+    g_repo = g.get_repo(g_repo.full_name)
+
     g_repo.protect_branch(branch, enabled=True)
     # NOTE(sileht): Not yet part of the API
     # maybe soon https://github.com/PyGithub/PyGithub/pull/527
@@ -66,7 +88,7 @@ def protect(g_repo, branch):
             'required_pull_request_reviews': {
                 "dismissal_restrictions": {},
                 "dismiss_stale_reviews": True,
-                "require_code_owner_reviews": True,
+                "require_code_owner_reviews": False,
             },
             'required_status_checks': {
                 'strict': True,
@@ -75,8 +97,7 @@ def protect(g_repo, branch):
             'restrictions': None,
             'enforce_admins': True,
         },
-        headers={'Accept': 'application/vnd.github.loki-preview+json, '
-                 'application/vnd.github.machine-man-preview+json'}
+        headers={'Accept': 'application/vnd.github.loki-preview+json'}
     )
 
 

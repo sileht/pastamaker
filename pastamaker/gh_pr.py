@@ -93,12 +93,8 @@ def pastamaker_update_status(self):
         state = "failure"
         description = "%s changes requested" % requested_changes
     else:
-        state = "success" if approved >= required else "failure"
+        state = "success" if approved >= required else "pending"
         description = "%s of %s required reviews" % (approved, required)
-
-    # TODO(sileht): Rethink this later, this put the pull request
-    # is error state while, the CI pass, this looks not good
-    state = "success"
 
     commit = self.base.repo.get_commit(self.head.sha)
     for s in commit.get_statuses():
