@@ -1,10 +1,10 @@
 ---
-reviews:
+required_approvals:
   default: 1
   -@master: 2
   gnocchixyz/tools-tester: 1
   gnocchixyz/tools-tester@master: 1
-branch_protection:
-  enforce_admins:
-    default: true
-    sileht/pastamaker: false
+
+branch_protection_enforce_admins:
+  default: true
+  sileht/pastamaker: false

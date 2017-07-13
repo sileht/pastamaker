@@ -18,42 +18,40 @@
 import os
 import yaml
 
-with open("config.yml") as f:
+with open("config_default.yml") as f:
     CONFIG = yaml.load(f.read())
 
-_CONFIG = {
-    "INTEGRATION_ID": None,
-    "PRIVATE_KEY": None,
-    "WEBHOOK_SECRET": None,
-    "WEBHACK_USERNAME": None,
-    "WEBHACK_PASSWORD": None,
-    "DEBUG": False,
-    "BASE_URL": None,
-    "FLUSH_REDIS_ON_STARTUP": False,
-    "REQUIRED_APPROVALS_DEFAULT": 2,
-    "REQUIRED_APPROVALS": CONFIG["reviews"],
-    "BRANCH_PROTECTION": CONFIG["branch_protection"],
-}
+with open("config.yml") as f:
+    for key, value in dict(yaml.load(f.read())).items():
+        CONFIG[key] = value
 
-print("**********************************************************")
-print("configuration:")
-for name, default in _CONFIG.items():
-    value = os.getenv("PASTAMAKER_%s" % name, default)
-    if default is not None and value is not None:
-        value = type(default)(value)
+cfg_msg = ""
+for name, config_value in CONFIG.items():
+    name = name.upper()
+    value = os.getenv("PASTAMAKER_%s" % name, config_value)
+    if value == "<required>":
+        raise RuntimeError("PASTAMAKER_%s environement of %s configuration"
+                           "option must be set." % (name, name.lower()))
+    if config_value is not None and value is not None:
+        value = type(config_value)(value)
     globals()[name] = value
+
     if (name in ["PRIVATE_KEY", "WEBHOOK_SECRET", "WEBHACK_PASSWORD"]
             and value is not None):
         value = "*****"
-    print("* PASTAMAKER_%s=%s" % (name, value))
-print("**********************************************************")
+    cfg_msg += "* %s: %s\n" % (name, value)
+
+print("""
+##################### CONFIGURATION ######################
+%s##########################################################
+""" % cfg_msg)
 
 
-def get_value_from(config_options, repo, branch, _type):
+def get_value_from(config_options, repo, branch, default):
     for name in ["%s@%s" % (repo, branch), repo, "-@%s" % branch, "default"]:
         if name in config_options:
-            value = _type(config_options[name])
+            value = config_options[name]
             break
     else:
-        value = _type(config_options)
+        value = default
     return value

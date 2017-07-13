@@ -32,14 +32,11 @@ def is_protected(g_repo, branch, enforce_admins):
 
     g_branch = g_repo.get_protected_branch(branch)
     if not g_branch.protected:
-        LOG.info("Protection of branch %s of %s is disabled"
-                 % (branch, g_repo.full_name))
         return False
 
     headers, data = g_repo._requester.requestJsonAndCheck(
         "GET", g_repo.url + "/branches/" + branch + '/protection',
-        headers={'Accept': 'application/vnd.github.loki-preview+json, '
-                 'application/vnd.github.machine-man-preview+json'}
+        headers={'Accept': 'application/vnd.github.loki-preview+json'}
     )
 
     # NOTE(sileht): delete urls from the payload
@@ -63,11 +60,7 @@ def is_protected(g_repo, branch, enforce_admins):
         }
     }
 
-    ret = excepted == data
-    if not ret:
-        LOG.info("Protection of branch %s of %s is unexpected:\n%s\n\n"
-                 "*vs* \n\n%s" % (branch, g_repo.full_name, excepted, data))
-    return ret
+    return excepted == data
 
 
 def protect(g_repo, branch, enforce_admins):
@@ -102,9 +95,9 @@ def protect(g_repo, branch, enforce_admins):
 
 
 def protect_if_needed(g_repo, branch):
-    enforce_admins = config.get_value_from(config.BRANCH_PROTECTION,
-                                           g_repo.full_name,
-                                           branch, bool)
+    enforce_admins = config.get_value_from(
+        config.BRANCH_PROTECTION_ENFORCE_ADMINS,
+        g_repo.full_name, branch, True)
     if not is_protected(g_repo, branch, enforce_admins):
         LOG.warning("Branch %s of %s is misconfigured, configuring it",
                     branch, g_repo.full_name, enforce_admins)

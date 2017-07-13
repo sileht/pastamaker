@@ -36,10 +36,6 @@ def pretty(self):
         len(self.approvals[0]))
 
 
-def _get_approvals_config(repo, branch):
-    return config.get_value_from(config.REQUIRED_APPROVALS, repo, branch, int)
-
-
 @property
 def approvals(self):
     if not hasattr(self, "_pastamaker_approvals"):
@@ -69,8 +65,9 @@ def approvals(self):
                 LOG.error("%s FIXME review state unhandled: %s",
                           self.pretty(), review.state)
 
-        required = _get_approvals_config(self.base.repo.full_name,
-                                         self.base.ref)
+        required = config.get_value_from(config.REQUIRED_APPROVALS,
+                                         self.base.repo.full_name,
+                                         self.base.ref, 2)
         # FIXME(sileht): Compute the thing on JS side
         remaining = list(six.moves.range(max(0, required - len(reviews_ok))))
         self._pastamaker_approvals = ([users_info[u] for u in reviews_ok],
