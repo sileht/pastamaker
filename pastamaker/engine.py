@@ -36,24 +36,24 @@ class PastaMakerEngine(object):
 
     def _get_logprefix(self, branch="<unknown>"):
         return (self._u.login + "/" + self._r.name +
-                "/pull/?@" + branch + " (?, ?)")
+                "/pull/XXX@" + branch + " (-)")
 
     def log_formated_event(self, event_type, incoming_pull, data):
         if event_type == "pull_request":
             p_info = incoming_pull.pretty()
-            extra = "action: %s" % data["action"]
+            extra = ", action: %s" % data["action"]
 
         elif event_type == "pull_request_review":
             p_info = incoming_pull.pretty()
-            extra = "action: %s, review-state: %s" % (data["action"],
-                                                      data["review"]["state"])
+            extra = ", action: %s, review-state: %s" % (
+                data["action"], data["review"]["state"])
 
         elif event_type == "status":
             if incoming_pull:
                 p_info = incoming_pull.pretty()
             else:
                 p_info = self._get_logprefix()
-            extra = "ci-status: %s, sha: %s" % (data["state"], data["sha"])
+            extra = ", ci-status: %s, sha: %s" % (data["state"], data["sha"])
 
         elif event_type == "refresh":
             p_info = self._get_logprefix(data["branch"])
@@ -63,9 +63,9 @@ class PastaMakerEngine(object):
                 p_info = incoming_pull.pretty()
             else:
                 p_info = self._get_logprefix()
-            extra = " ignored"
+            extra = ", ignored"
 
-        LOG.info("%s - got event '%s' - %s", p_info, event_type, extra)
+        LOG.info("%s received event '%s'%s", p_info, event_type, extra)
 
     def handle(self, event_type, data):
         # Everything start here
@@ -84,6 +84,11 @@ class PastaMakerEngine(object):
                 incoming_pull = self._r.get_pull(issues[0].number)
 
         self.log_formated_event(event_type, incoming_pull, data)
+
+        if event_type not in ["pull_request", "pull_request_review",
+                              "status", "refresh"]:
+            # Unhandled and already logged
+            return
 
         current_branch = None
         if incoming_pull:
@@ -154,12 +159,11 @@ class PastaMakerEngine(object):
 
     def dump_pulls_state(self, branch, pulls):
         for p in pulls:
-            LOG.info("%s, %s, %s, base-sha: %s, head-sha: %s)",
-                     p.pretty(), p.travis_state,
-                     p.created_at, p.base.sha, p.head.sha)
+            LOG.info("%s, sha: %s->%s)",
+                     p.pretty(), p.base.sha, p.head.sha)
 
     def get_pull_requests_queue(self, branch):
-        LOG.info("%s, looking for pull requests mergeable",
+        LOG.info("%s, retrieving pull requests",
                  self._get_logprefix(branch))
 
         sort_key = operator.attrgetter('pastamaker_weight', 'updated_at')
@@ -168,6 +172,6 @@ class PastaMakerEngine(object):
         pulls = six.moves.map(lambda p: p.pastamaker_update(), pulls)
         pulls = list(sorted(pulls, key=sort_key, reverse=True))
         self.dump_pulls_state(branch, pulls)
-        LOG.info("%s, %s pull request(s)" %
+        LOG.info("%s, %s pull request(s) found" %
                  (self._get_logprefix(branch), len(pulls)))
         return pulls

@@ -29,11 +29,16 @@ LOG = logging.getLogger(__name__)
 
 
 def pretty(self):
-    return "%s/%s/pull/%s@%s (%s, %s, %s)" % (
-        self.base.user.login, self.base.repo.name,
-        self.number, self.base.ref, self.mergeable_state or "none",
-        self.pastamaker_weight,
-        len(self.approvals[0]))
+    return "%s/%s/pull/%s@%s (%s/%s/%s/%s)" % (
+        self.base.user.login,
+        self.base.repo.name,
+        self.number,
+        self.base.ref,
+        self.mergeable_state or "none",
+        self.travis_state,
+        len(self.approvals[0]),
+        self.pastamaker_weight if self.pastamaker_weight >= 0 else "NA",
+    )
 
 
 @property

@@ -51,7 +51,7 @@ def setup_logging():
     daiquiri.setup(
         outputs=[daiquiri.output.Stream(
             sys.stdout,
-            formatter=logging.Formatter("%(levelname)s %(name)s: %(message)s"),
+            formatter=logging.Formatter("%(levelname)s %(message)s"),
         )],
         level=(logging.DEBUG if config.DEBUG else logging.INFO),
     )
