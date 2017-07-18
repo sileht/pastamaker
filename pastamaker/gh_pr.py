@@ -62,6 +62,8 @@ def approvals(self):
             elif review.state in ["DISMISSED", "CHANGES_REQUESTED"]:
                 if review.user.login in reviews_ok:
                     reviews_ok.remove(review.user.login)
+                if review.user.login in reviews_ko:
+                    reviews_ko.remove(review.user.login)
                 if review.state == "CHANGES_REQUESTED":
                     reviews_ko.add(review.user.login)
             elif review.state == 'COMMENTED':
