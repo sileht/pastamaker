@@ -142,7 +142,6 @@ def pastamaker_raw_data(self):
     data["pastamaker_weight"] = self.pastamaker_weight
     data["travis_state"] = self.travis_state
     data["travis_url"] = self.travis_url
-    data["mergeable"] = self.mergeable
     data["approvals"] = self.approvals
     return data
 
