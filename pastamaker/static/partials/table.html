@@ -29,7 +29,7 @@
          <th class="state"><span class="glyphicon glyphicon-file"></span></th>
          <th class="last-updated">Last updated</th>
          <th class="state" title="Indicates its status">CI</th>
-         <th class="mergeable" title="Mergeable status">Mergeable</th>
+         <th class="mergeable" title="Mergeable status"><span class="glyphicon glyphicon-random" alt="Mergeable"></span></th>
          <th class="reviews"><span class="glyphicon glyphicon-thumbs-up"></span></th>
          <th class="reviews"><span class="glyphicon glyphicon-thumbs-down"></span></th>
          <th class="queue">Weight</th>
@@ -55,9 +55,9 @@
                  </a>
              </td>
              <td class="mergeable">
-                     <span ng-if="pull.travis_state == true" title="Can be merged" class="good glyphicon glyphicon-ok"></span>
-                     <span ng-if="pull.travis_state == false" title="Cannot be merged" class="bad glyphicon glyphicon-remove"></span>
-                     <span ng-if="pull.travis_state == null" title="Unknown status" class="bad glyphicon glyphicon-question-sign"></span>
+                     <span ng-if="pull.mergeable == true" title="Can be merged" class="good glyphicon glyphicon-ok"></span>
+                     <span ng-if="pull.mergeable == false" title="Cannot be merged" class="bad glyphicon glyphicon-remove"></span>
+                     <span ng-if="pull.mergeable == null" title="Unknown status" class="bad glyphicon glyphicon-question-sign"></span>
              </td>
              <td class="reviews info">
                  <a ng-repeat="user in pull.approvals[0]"
