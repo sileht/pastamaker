@@ -40,9 +40,12 @@ def get_redis():
     global REDIS_CONNECTION
 
     if REDIS_CONNECTION is None:
-        redis_url = os.getenv('REDIS_URL')
+        for envvar in ["REDIS_URL", "REDISTOGO_URL", "REDISCLOUD_URL"]:
+            redis_url = os.getenv(envvar)
+            if redis_url:
+                break
         if not redis_url:
-            redis_url = os.getenv('REDISTOGO_URL')
+            raise RuntimeError("No redis url found in environments")
         REDIS_CONNECTION = redis.from_url(redis_url)
     return REDIS_CONNECTION
 
