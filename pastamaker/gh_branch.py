@@ -101,4 +101,4 @@ def protect_if_needed(g_repo, branch):
     if not is_protected(g_repo, branch, enforce_admins):
         LOG.warning("Branch %s of %s is misconfigured, configuring it",
                     branch, g_repo.full_name, enforce_admins)
-        protect(g_repo, branch)
+        protect(g_repo, branch, enforce_admins)
