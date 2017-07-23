@@ -17,6 +17,7 @@
 import logging
 import operator
 
+import github
 import six.moves
 import ujson
 
@@ -100,7 +101,12 @@ class PastaMakerEngine(object):
             return
 
         # protect the branch before doing anything
-        gh_branch.protect_if_needed(self._r, current_branch)
+        automerge = True
+        try:
+            gh_branch.protect_if_needed(self._r, current_branch)
+        except github.UnknownObjectException:
+            LOG.exception("Fail to protect branch, disabled automerge")
+            automerge = False
 
         need_status_update = ((event_type == "pull_request"
                                and data["action"] in ["opened", "synchronize"])
@@ -118,7 +124,8 @@ class PastaMakerEngine(object):
 
         self.set_cache_queues(current_branch, queues)
         if queues:
-            self.proceed_queues(queues)
+            if automerge:
+                self.proceed_queues(queues)
         else:
             LOG.info("Nothing queued, skipping the event")
 
