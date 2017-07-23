@@ -15,6 +15,7 @@
 # under the License.
 
 import logging
+import os
 
 import github
 
@@ -27,7 +28,11 @@ def is_protected(g_repo, branch, enforce_admins):
     # FIXME(sileht): I have asked Github about why this API doesn't work
     # with integration token. Use the webhack user as workaround
     # https://platform.github.community/t/branches-protection-api/2480
-    g = github.Github(config.WEBHACK_USERNAME, config.WEBHACK_PASSWORD)
+    token = os.getenv("PASTAMAKER_TOKEN_%s" % g_repo.owner.login)
+    if token:
+        g = github.Github(token)
+    else:
+        g = github.Github(config.WEBHACK_USERNAME, config.WEBHACK_PASSWORD)
     g_repo = g.get_repo(g_repo.full_name)
 
     g_branch = g_repo.get_protected_branch(branch)
@@ -67,7 +72,11 @@ def protect(g_repo, branch, enforce_admins):
     # FIXME(sileht): I have asked Github about why this API doesn't work
     # with integration token. Use the webhack user as workaround
     # https://platform.github.community/t/branches-protection-api/2480
-    g = github.Github(config.WEBHACK_USERNAME, config.WEBHACK_PASSWORD)
+    token = os.getenv("PASTAMAKER_TOKEN_%s" % g_repo.owner.login)
+    if token:
+        g = github.Github(token)
+    else:
+        g = github.Github(config.WEBHACK_USERNAME, config.WEBHACK_PASSWORD)
     g_repo = g.get_repo(g_repo.full_name)
 
     g_repo.protect_branch(branch, enabled=True)
