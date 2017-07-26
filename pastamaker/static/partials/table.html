@@ -112,7 +112,7 @@
                      <i>
                          <span ng-if="['started'].indexOf(job.state) !== -1">started <time am-time-ago="job.started_at"></time></span>
                          <span ng-if="['queued', 'received', 'started', 'created'].indexOf(job.state) === -1">
-                             <i>took {{ job.finished_at | amDifference : job.started_at : "minute" }} minute(s)
+                             <i>tooks {{ job.finished_at | amDifference : job.started_at : "minute" }} minute(s)
                          </span>
                      </i>
                  </div>
