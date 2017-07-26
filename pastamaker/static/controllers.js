@@ -58,7 +58,14 @@ app.classy.controller({
         this.$scope.refreshing = false;
         this.$scope.counter = this.refresh_interval;
         if (this.$scope.current_travis_raw_open) {
-            this.toggle_travis_info(this.$scope.current_travis_raw_open);
+            this.$scope.groups.forEach(function(group) {
+                group.pulls.forEach(function(pull) {
+                    var p = this.$scope.current_travis_raw_open;
+                    if (pull.base.repo.full_name == p.base.repo.full_name && pull.number == p.number){
+                        this.toggle_travis_info(pull);
+                    }
+                });
+            });
         }
     },
     on_error: function(data, status) {
