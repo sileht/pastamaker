@@ -64,8 +64,8 @@ app.classy.controller({
                     if (pull.base.repo.full_name == p.base.repo.full_name && pull.number == p.number){
                         this.toggle_travis_info(pull);
                     }
-                });
-            });
+                }.bind(this));
+            }.bind(this));
         }
     },
     on_error: function(data, status) {
