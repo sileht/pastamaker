@@ -87,29 +87,25 @@ app.classy.controller({
     refresh_travis: function(pull) {
         pull.travis_build = undefined;
         pull.travis_jobs = [];
-
+        var build_id = pull.travis_url.split("?")[0].split("/").slice(-1)[0];
         var v2_headers = { "Accept": "application/vnd.travis-ci.2+json" };
         var travis_base_url = 'https://api.travis-ci.org'
-        this.$http.get(travis_base_url + "/builds?event_type=pull_request&slug=" + pull.base.repo.full_name,
+        this.$http.get(travis_base_url + "/builds/" + build_id,
                        {headers: v2_headers}
         ).success(function(data, status, headers) {
-            data.builds.forEach(function(build) {
-                // Only keep last build
-                if (pull.travis_build === undefined && build.pull_request_number == pull.number) {
-                    pull.travis_build = build;
-                    pull.travis_jobs = [];
-                    build.job_ids.forEach(function(job_id) {
-                        this.$http.get(travis_base_url + "/jobs/" + job_id,
-                                       {headers: v2_headers}
-                        ).success(function(data, status, headers) {
-                            // console.log(data.job);
-                            pull.travis_jobs.push(data.job);
-                        }.bind(this));
-
-                    }.bind(this))
-                }
-            }.bind(this));
+            pull.travis_build = data.build;
+            pull.travis_jobs = [];
+            data.build.job_ids.forEach(function(job_id) {
+                this.$http.get(travis_base_url + "/jobs/" + job_id,
+                               {headers: v2_headers}
+                ).success(function(data, status, headers) {
+                    pull.travis_jobs.push(data.job);
+                }.bind(this));
+            }.bind(this))
         }.bind(this));
+    },
+    JobSorter: function(job){
+        return parseInt(job.number.replace(".", ""));
     },
 })
 ;
