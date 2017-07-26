@@ -99,7 +99,7 @@
                      <strong style="display:inline-block; width: 67px" ng-class="{maybe: ['pending', 'unknown'].indexOf(pull.travis_state) !== -1, good: pull.travis_state == 'success', bad: ['failure', 'error'].indexOf(pull.travis_state) !== -1}">#{{ pull.travis_build.number }}</strong>
                      <i>{{ pull.travis_build.job_ids.length }} jobs started <time am-time-ago="pull.travis_build.started_at" /></i>
                  </a>
-                 <div ng-repeat="job in pull.travis_jobs" title="{{ job.state }} / {{ job.status }}" style="padding-left: 7px">
+                 <div ng-repeat="job in pull.travis_jobs | orderBy 'number'" title="{{ job.state }} / {{ job.status }}" style="padding-left: 7px">
                      <span ng-if="job.state == 'received'" class="maybe glyphicon glyphicon-option-horizontal"></span>
                      <span ng-if="job.state == 'queued'" class="maybe glyphicon glyphicon-option-horizontal"></span>
                      <span ng-if="job.state == 'started'" class="maybe glyphicon glyphicon-cog"></span>
