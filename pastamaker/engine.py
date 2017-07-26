@@ -161,7 +161,7 @@ class PastaMakerEngine(object):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
         for pull in ujson.loads(self._redis.get(key)):
             if pull["number"] == number:
-                return pull["travis_status"] == "pending"
+                return pull["travis_state"] == "pending"
         return False
 
     def set_cache_queues(self, branch, pulls):
