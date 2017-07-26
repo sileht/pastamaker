@@ -75,8 +75,6 @@ class PastaMakerEngine(object):
             # Don't compute the queue for nothing
             if data["context"].startswith("pastamaker/"):
                 return
-            elif data["state"] == "pending":
-                return
 
         incoming_pull = gh_pr.from_event(self._r, data)
         if not incoming_pull and event_type == "status":
@@ -100,6 +98,10 @@ class PastaMakerEngine(object):
             LOG.info("No pull request found in the event, ignoring")
             return
 
+        if (event_type == "status" and data["state"] == "pending" and
+                self.is_cached_pull_travis_ci_state_pending(
+                    current_branch, incoming_pull.number)):
+            return
         # protect the branch before doing anything
         automerge = True
         try:
@@ -154,6 +156,13 @@ class PastaMakerEngine(object):
                 # (synchronize)
                 if p.update_branch():
                     LOG.info("%s branch updated", p.pretty())
+
+    def is_cached_pull_travis_ci_state_pending(self, branch, number):
+        key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
+        for pull in ujson.loads(self._redis.get(key)):
+            if pull["number"] == number:
+                return pull["travis_status"] == "pending"
+        return False
 
     def set_cache_queues(self, branch, pulls):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
