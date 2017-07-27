@@ -73,6 +73,13 @@ Heroku Setup
     # trigger refresh manually or to configure the scheduler
     heroku run python pastamaker/refresher.py
 
+Dashboard
+=========
+Pastamaker offers a dashboard that you can access using a Web brower. Just
+point to the URL where your WSGI service runs.
+
+.. image:: dashboard.jpg
+
 Github Projects Branch protections setuped by pastamaker
 ========================================================
 
