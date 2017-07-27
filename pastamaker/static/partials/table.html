@@ -92,7 +92,7 @@
                      <span ng-if="pull.travis_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
                      <span ng-if="pull.travis_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
                      <span ng-if="pull.travis_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
-                     <span ng-if="pull.travis_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
+                     <span ng-if="pull.travis_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-cog"></span>
                      <span ng-if="pull.travis_state == 'unknown'" title="Latest test unknown" class="maybe glyphicon glyphicon-question-sign"></span>
                  </a>
                  <a href="{{ pull.travis_url }}" target="_blank" title="state: {{ pull.travis_build.state }}">
