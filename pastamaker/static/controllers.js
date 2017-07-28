@@ -16,7 +16,7 @@ app.classy.controller({
         this.$scope.counter = 0;
         this.$scope.autorefresh = false;
         this.$scope.event = false;
-        this.$scope.current_travis_raw_open = null;
+        this.opened_travis_tabs = {};
 
         if(typeof(EventSource) !== "undefined") {
             console.log("event enabled");
@@ -50,23 +50,26 @@ app.classy.controller({
         }.bind(this)).error(this.on_error);
     },
     update_pull_requests: function(data) {
-        this.$scope.groups = [];
+        var old_tabs = this.opened_travis_tabs;
+        this.opened_travis_tabs = {};
+        this.$scope.groups = []
         data.forEach(function(group) {
+
+            // reopen tabs
+            group.pulls.forEach(function(pull) {
+                var repo = pull.base.repo.full_name;
+                if (old_tabs.hasOwnProperty(repo)){
+                    if (old_tabs[repo].indexOf(pull.number) !== -1) {
+                        this.toggle_travis_info(pull);
+                    }
+                }
+            }.bind(this));
+
             this.$scope.groups.push(group)
         }.bind(this));
         this.$scope.last_update = new Date();
         this.$scope.refreshing = false;
         this.$scope.counter = this.refresh_interval;
-        if (this.$scope.current_travis_raw_open) {
-            this.$scope.groups.forEach(function(group) {
-                group.pulls.forEach(function(pull) {
-                    var p = this.$scope.current_travis_raw_open;
-                    if (pull.base.repo.full_name == p.base.repo.full_name && pull.number == p.number){
-                        this.toggle_travis_info(pull);
-                    }
-                }.bind(this));
-            }.bind(this));
-        }
     },
     on_error: function(data, status) {
         console.warn(data, status);
@@ -77,18 +80,25 @@ app.classy.controller({
         this.$scope.groups.forEach(function(group) {
             group.pulls.forEach(function(pull) {
                 pull.open_travis_row = false;
+                if (this.opened_travis_tabs.hasOwnProperty(repo)){
+                    this.opened_travis_tabs[repo] = this.opened_travis_tabs[repo].filter(e => e !== pull.number)
+                }
             });
         });
     },
     toggle_travis_info: function(pull) {
         var opened = pull.open_travis_row;
-        this.hide_all_travis_info()
+        var repo = pull.base.repo.full_name
         if (!opened) {
+            if (!this.opened_travis_tabs.hasOwnProperty(repo)){
+                this.opened_travis_tabs[repo] = [];
+            }
+            this.opened_travis_tabs[repo].push(pull.number);
             pull.open_travis_row = true;
-            this.$scope.current_travis_raw_open = pull;
             this.refresh_travis(pull);
         } else {
-            this.$scope.current_travis_raw_open = null;
+            pull.open_travis_row = false;
+            this.opened_travis_tabs[repo] = this.opened_travis_tabs[repo].filter(e => e !== pull.number)
         }
     },
     refresh_travis: function(pull) {
