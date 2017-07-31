@@ -143,6 +143,7 @@ def pastamaker_raw_data(self):
     data["travis_state"] = self.travis_state
     data["travis_url"] = self.travis_url
     data["approvals"] = self.approvals
+    data["pastamaker_commits"] = [c.raw_data for c in self.pastamaker_commits]
     return data
 
 
@@ -208,7 +209,8 @@ def pastamaker_weight(self):
 
 
 def pastamaker_update(self, force=False):
-    for attr in ["_pastamaker_weight",
+    for attr in ["_pastamaker_commits",
+                 "_pastamaker_weight",
                  "_pastamaker_ci_statuses",
                  "_pastamaker_approvals"]:
         if hasattr(self, attr):
@@ -227,6 +229,13 @@ def pastamaker_update(self, force=False):
 
     LOG.debug("%s, refreshed", self.pretty())
     return self
+
+
+@property
+def pastamaker_commits(self):
+    if not hasattr(self, "_pastamaker_commits"):
+        self._pastamaker_commits = list(self.get_commits())
+    return self._pastamaker_commits
 
 
 def pastamaker_merge(self, **post_parameters):
@@ -283,6 +292,7 @@ def monkeypatch_github():
     p.pastamaker_merge = pastamaker_merge
     p.pastamaker_update_status = pastamaker_update_status
 
+    p.pastamaker_commits = pastamaker_commits
     p.pastamaker_ci_statuses = pastamaker_ci_statuses
     p.pastamaker_weight = pastamaker_weight
     p.pastamaker_raw_data = pastamaker_raw_data

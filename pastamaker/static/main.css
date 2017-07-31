@@ -83,6 +83,9 @@ p.table-foot-note {
     font-size: 80%;
 }
 
+.title a {
+    font-weight: normal;
+}
 p.diff-stats {
     font-weight: bold;
     text-align: right;

@@ -8,7 +8,7 @@ app.classy.controller({
 
 app.classy.controller({
     name: 'PullsController',
-    inject: ['$scope', '$http', '$interval', '$location'],
+    inject: ['$scope', '$http', '$interval', '$location', '$window'],
     init: function() {
         'use strict';
         this.refresh_interval = 5 * 60;
@@ -17,6 +17,7 @@ app.classy.controller({
         this.$scope.autorefresh = false;
         this.$scope.event = false;
         this.opened_travis_tabs = {};
+        this.opened_commits_tabs = {};
 
         if(typeof(EventSource) !== "undefined") {
             console.log("event enabled");
@@ -51,17 +52,24 @@ app.classy.controller({
             }.bind(this)).error(this.on_error);
         },
         update_pull_requests: function(data) {
-            var old_tabs = this.opened_travis_tabs;
+            var old_travis_tabs = this.opened_travis_tabs;
+            var old_commits_tabs = this.opened_commits_tabs;
             this.opened_travis_tabs = {};
+            this.opened_commits_tabs = {};
             this.$scope.groups = []
             data.forEach(function(group) {
 
                 // reopen tabs
                 group.pulls.forEach(function(pull) {
                     var repo = pull.base.repo.full_name;
-                    if (old_tabs.hasOwnProperty(repo)){
-                        if (old_tabs[repo].indexOf(pull.number) !== -1) {
+                    if (old_travis_tabs.hasOwnProperty(repo)){
+                        if (old_travis_tabs[repo].indexOf(pull.number) !== -1) {
                             this.toggle_travis_info(pull);
+                        }
+                    }
+                    if (old_commits_tabs.hasOwnProperty(repo)){
+                        if (old_commits_tabs[repo].indexOf(pull.number) !== -1) {
+                            this.toggle_commits_info(pull);
                         }
                     }
                 }.bind(this));
@@ -77,15 +85,32 @@ app.classy.controller({
             this.$scope.refreshing = false;
             this.$scope.counter = this.refresh_interval;
         },
-        hide_all_travis_info: function() {
-            this.$scope.groups.forEach(function(group) {
-                group.pulls.forEach(function(pull) {
-                    pull.open_travis_row = false;
-                    if (this.opened_travis_tabs.hasOwnProperty(repo)){
-                        this.opened_travis_tabs[repo] = this.opened_travis_tabs[repo].filter(e => e !== pull.number)
-                    }
-                });
-            });
+        hide_all_tabs: function(group) {
+            group.pulls.forEach(function(pull) {
+                var repo = pull.base.repo.full_name;
+                pull.open_travis_row = false;
+                if (this.opened_travis_tabs.hasOwnProperty(repo)){
+                    this.opened_travis_tabs[repo] = this.opened_travis_tabs[repo].filter(e => e !== pull.number)
+                }
+                pull.open_commits_row = false;
+                if (this.opened_commits_tabs.hasOwnProperty(repo)){
+                    this.opened_commits_tabs[repo] = this.opened_commits_tabs[repo].filter(e => e !== pull.number)
+                }
+            }.bind(this));
+        },
+        toggle_commits_info: function(pull) {
+            var opened = pull.open_commits_row;
+            var repo = pull.base.repo.full_name;
+            if (!opened) {
+                if (!this.opened_commits_tabs.hasOwnProperty(repo)){
+                    this.opened_commits_tabs[repo] = [];
+                }
+                this.opened_commits_tabs[repo].push(pull.number);
+                pull.open_commits_row = true;
+            } else {
+                pull.open_commits_row = false;
+                this.opened_commits_tabs[repo] = this.opened_commits_tabs[repo].filter(e => e !== pull.number)
+            }
         },
         toggle_travis_info: function(pull) {
             var opened = pull.open_travis_row;
@@ -122,9 +147,21 @@ app.classy.controller({
                 }.bind(this))
             }.bind(this));
         },
+        open_all_commits: function(pull){
+            pull.pastamaker_commits.forEach(function(commit) {
+                var url = "https://github.com/" + pull.base.repo.full_name +
+                    "/pull/" + pull.number + "/commits/" + commit.sha;
+                this.$window.open(url, commit.sha);
+            }.bind(this));
+        },
         JobSorter: function(job){
             return parseInt(job.number.replace(".", ""));
         },
+    },
+});
+
+app.filter("GetCommitTitle", function(){
+    return function(commit) {
+        return commit.commit.message.split("\n")[0];
     }
-})
-;
+});

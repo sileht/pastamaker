@@ -4,24 +4,27 @@
      {{ general_error }}
    </p>
 </div>
-<div class="autorefresh"><i><small>
-    <span>Updated <time am-time-ago="last_update"></time></span>
-    <span ng-show="autorefresh">
-        <span ng-show="refreshing">, refreshing...</span>
-        <span ng-hide="refreshing">, refresh in {{ counter }} seconds</span>
-    </span>
-    <span ng-show="event">
-        by a push event
-    </span>
-    <span ng-hide="event || autorefresh">
-        , autorefresh disabled
-    </span>
-</small></i></div>
+<div class="autorefresh">
+    <i><small>
+        <span>Updated <time am-time-ago="last_update"></time></span>
+        <span ng-show="autorefresh">
+            <span ng-show="refreshing">, refreshing...</span>
+            <span ng-hide="refreshing">, refresh in {{ counter }} seconds</span>
+        </span>
+        <span ng-show="event">
+            by a push event
+        </span>
+        <span ng-hide="event || autorefresh">
+            , autorefresh disabled
+        </span>
+    </small></i>
+</div>
 <div ng-repeat="group in groups | orderBy:'updated_at':true" class="group">
     <table class="table table-condensed table-hover multiple">
      <thead>
      <tr>
          <th class="title">
+            <!--a href="#" class="pull-right" ng-click="hide_all_tabs(group)"><span class="glyphicon glyphicon-remove"></span> Close all tabs</a-->
             <a href="https://github.com/{{ group.owner }}/{{ group.repo }}/pulls">{{ group.owner }}/{{ group.repo }}</a> - {{ group.branch }}
          </th>
          <th class="state"><span class="glyphicon glyphicon-comment"></span></th>
@@ -41,6 +44,7 @@
                  <div class="pull-right"><span style="color:green">+{{ pull.additions }}</span> / <span style="color:red">-{{ pull.deletions }}</span></div>
                  <a href="{{ pull.user.html_url }}"><img ng-src="{{ pull.user.avatar_url }}" class="avatar" alt="{{ pull.user.login }}"></a>
                  <a href="{{ pull.html_url }}" target="_blank">{{ pull.title }} <span style="color:grey">#{{ pull.number }}</span></a>
+                 <a href="#" ng-click="toggle_commits_info(pull)" style="display:inline-block;padding-left:5px;"><span ng-class="{'glyphicon glyphicon-chevron-up': pull.open_commits_row, 'glyphicon glyphicon glyphicon-chevron-down': !pull.open_commits_row}"></a>
              </td>
              <td class="state"><a href="{{ pull.html_url }}" target="_blank">{{ pull.comments }}</a></td>
              <td class="state"><a href="{{ pull.html_url }}/commits" target="_blank">{{ pull.commits }}</a></td>
@@ -80,42 +84,50 @@
                 <span ng-if="pull.pastamaker_weight < 0">N/A</span>
             </td>
         </tr>
+        <tr ng-if="pull.open_commits_row">
+            <td colspan="10">
+                <a href="#" class="pull-right" ng-click="toggle_travis_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
+                <a href="#" class="pull-right" style="margin-right:5px" ng-click="open_all_commits(pull)"><span class="glyphicon glyphicon-new-window"></span></a>
+                <ul>
+                    <li ng-repeat="commit in pull.pastamaker_commits">
+                        <a href="https://github.com/{{ group.owner }}/{{ group.repo }}/pull/{{ pull.number }}/commits/{{ commit.sha }}" target="_blank" style="display:inline-block;padding-right:10px;">{{ commit | GetCommitTitle }}</a>
+                        <span style="color:green">+{{ commit.stats.additions }}</span> / <span style="color:red">-{{ commit.stats.deletions }}</span>
+                    </li>
+                </ul>
+            </td>
+        </tr>
         <tr ng-repeat-end ng-if="pull.open_travis_row">
             <td colspan="10">
-                 <a href="#" class="pull-right">
-                     <span class="glyphicon glyphicon-remove" ng-click="toggle_travis_info(pull)"></span>
-                 </a>
-                 <a href="#" class="pull-right" style="margin-right:5px">
-                     <span class="glyphicon glyphicon-refresh" ng-click="refresh_travis(pull)"></span>
-                 </a>
-                 <a href="{{ pull.travis_url }}" target="_blank" title="state: {{ pull.travis_build.state }}">
-                     <span ng-if="pull.travis_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
-                     <span ng-if="pull.travis_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
-                     <span ng-if="pull.travis_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
-                     <span ng-if="pull.travis_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-cog"></span>
-                     <span ng-if="pull.travis_state == 'unknown'" title="Latest test unknown" class="maybe glyphicon glyphicon-question-sign"></span>
-                 </a>
-                 <a href="{{ pull.travis_url }}" target="_blank" title="state: {{ pull.travis_build.state }}">
-                     <strong style="display:inline-block; width: 67px" ng-class="{maybe: ['pending', 'unknown'].indexOf(pull.travis_state) !== -1, good: pull.travis_state == 'success', bad: ['failure', 'error'].indexOf(pull.travis_state) !== -1}">#{{ pull.travis_build.number }}</strong>
-                     <i>{{ pull.travis_build.job_ids.length }} jobs started <time am-time-ago="pull.travis_build.started_at" /></i>
-                 </a>
-                 <div ng-repeat="job in pull.travis_jobs | orderBy: JobSorter" title="{{ job.state }} / {{ job.status }}" style="padding-left: 7px">
-                     <span ng-if="job.state == 'received'" class="maybe glyphicon glyphicon-option-horizontal"></span>
-                     <span ng-if="job.state == 'queued'" class="maybe glyphicon glyphicon-option-horizontal"></span>
-                     <span ng-if="job.state == 'started'" class="maybe glyphicon glyphicon-cog"></span>
-                     <span ng-if="job.state == 'created'"  class="maybe glyphicon glyphicon-time"></span>
-                     <span ng-if="job.state == 'passed'" class="good glyphicon glyphicon-ok"></span>
-                     <span ng-if="job.state == 'errored'" class="bad glyphicon glyphicon-remove"></span>
-                     <span ng-if="job.state == 'failed'" class="bad glyphicon glyphicon-remove"></span>
-                     <strong style="display:inline-block; width: 60px" ng-class="{maybe: ['queued', 'received', 'started', 'created'].indexOf(job.state) !== -1, good: job.state == 'passed', bad: ['errored', 'failed'].indexOf(job.state) !== -1}">#{{ job.number }}</strong>
-                     <a href="https://api.travis-ci.org/jobs/{{ job.id }}/log" target="_blank">{{ job.config.env }}</a>
-                     <i>
-                         <span ng-if="['started'].indexOf(job.state) !== -1">started <time am-time-ago="job.started_at"></time></span>
-                         <span ng-if="['queued', 'received', 'started', 'created'].indexOf(job.state) === -1">
-                             <i>tooks {{ job.finished_at | amDifference : job.started_at : "minute" }} minute(s)
-                         </span>
-                     </i>
-                 </div>
+                <a href="#" class="pull-right" ng-click="toggle_travis_info(pull)"><span class="glyphicon glyphicon-remove"><span></a>
+                <a href="#" class="pull-right" style="margin-right:5px" ng-click="refresh_travis(pull)"><span class="glyphicon glyphicon-refresh"></span></a>
+                <a href="{{ pull.travis_url }}" target="_blank" title="state: {{ pull.travis_build.state }}">
+                    <span ng-if="pull.travis_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
+                    <span ng-if="pull.travis_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
+                    <span ng-if="pull.travis_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
+                    <span ng-if="pull.travis_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-cog"></span>
+                    <span ng-if="pull.travis_state == 'unknown'" title="Latest test unknown" class="maybe glyphicon glyphicon-question-sign"></span>
+                </a>
+                <a href="{{ pull.travis_url }}" target="_blank" title="state: {{ pull.travis_build.state }}">
+                    <strong style="display:inline-block; width: 67px" ng-class="{maybe: ['pending', 'unknown'].indexOf(pull.travis_state) !== -1, good: pull.travis_state == 'success', bad: ['failure', 'error'].indexOf(pull.travis_state) !== -1}">#{{ pull.travis_build.number }}</strong>
+                    <i>{{ pull.travis_build.job_ids.length }} jobs started <time am-time-ago="pull.travis_build.started_at" /></i>
+                </a>
+                <div ng-repeat="job in pull.travis_jobs | orderBy: JobSorter" title="{{ job.state }} / {{ job.status }}" style="padding-left: 7px">
+                    <span ng-if="job.state == 'received'" class="maybe glyphicon glyphicon-option-horizontal"></span>
+                    <span ng-if="job.state == 'queued'" class="maybe glyphicon glyphicon-option-horizontal"></span>
+                    <span ng-if="job.state == 'started'" class="maybe glyphicon glyphicon-cog"></span>
+                    <span ng-if="job.state == 'created'"  class="maybe glyphicon glyphicon-time"></span>
+                    <span ng-if="job.state == 'passed'" class="good glyphicon glyphicon-ok"></span>
+                    <span ng-if="job.state == 'errored'" class="bad glyphicon glyphicon-remove"></span>
+                    <span ng-if="job.state == 'failed'" class="bad glyphicon glyphicon-remove"></span>
+                    <strong style="display:inline-block; width: 60px" ng-class="{maybe: ['queued', 'received', 'started', 'created'].indexOf(job.state) !== -1, good: job.state == 'passed', bad: ['errored', 'failed'].indexOf(job.state) !== -1}">#{{ job.number }}</strong>
+                    <a href="https://api.travis-ci.org/jobs/{{ job.id }}/log" target="_blank">{{ job.config.env }}</a>
+                    <i>
+                        <span ng-if="['started'].indexOf(job.state) !== -1">started <time am-time-ago="job.started_at"></time></span>
+                        <span ng-if="['queued', 'received', 'started', 'created'].indexOf(job.state) === -1">
+                            <i>tooks {{ job.finished_at | amDifference : job.started_at : "minute" }} minute(s)
+                        </span>
+                    </i>
+                </div>
              </td>
         </tr>
      </tbody>
