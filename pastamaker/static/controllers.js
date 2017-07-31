@@ -18,6 +18,7 @@ app.classy.controller({
         this.$scope.event = false;
         this.opened_travis_tabs = {};
         this.opened_commits_tabs = {};
+        this.$scope.tabs_are_open = {};
 
         if(typeof(EventSource) !== "undefined") {
             console.log("event enabled");
@@ -85,17 +86,19 @@ app.classy.controller({
             this.$scope.refreshing = false;
             this.$scope.counter = this.refresh_interval;
         },
-        hide_all_tabs: function(group) {
-            group.pulls.forEach(function(pull) {
-                var repo = pull.base.repo.full_name;
-                pull.open_travis_row = false;
-                if (this.opened_travis_tabs.hasOwnProperty(repo)){
-                    this.opened_travis_tabs[repo] = this.opened_travis_tabs[repo].filter(e => e !== pull.number)
-                }
-                pull.open_commits_row = false;
-                if (this.opened_commits_tabs.hasOwnProperty(repo)){
-                    this.opened_commits_tabs[repo] = this.opened_commits_tabs[repo].filter(e => e !== pull.number)
-                }
+        hide_all_tabs: function() {
+            this.$scope.groups.forEach(function(group) {
+                group.pulls.forEach(function(pull) {
+                    var repo = pull.base.repo.full_name;
+                    pull.open_travis_row = false;
+                    if (this.opened_travis_tabs.hasOwnProperty(repo)){
+                        this.opened_travis_tabs[repo] = this.opened_travis_tabs[repo].filter(e => e !== pull.number)
+                    }
+                    pull.open_commits_row = false;
+                    if (this.opened_commits_tabs.hasOwnProperty(repo)){
+                        this.opened_commits_tabs[repo] = this.opened_commits_tabs[repo].filter(e => e !== pull.number)
+                    }
+                }.bind(this));
             }.bind(this));
         },
         toggle_commits_info: function(pull) {

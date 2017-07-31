@@ -1,3 +1,5 @@
+
+<a href="#" style="margin-top:-50px;" class="pull-right" ng-click="hide_all_tabs()"><span class="glyphicon glyphicon-circle-arrow-up"></span></a>
 <div class="error" ng-class="{hidden: !general_error}">
    <h3>Error :(</h3>
    <p>
@@ -24,7 +26,6 @@
      <thead>
      <tr>
          <th class="title">
-            <!--a href="#" class="pull-right" ng-click="hide_all_tabs(group)"><span class="glyphicon glyphicon-remove"></span> Close all tabs</a-->
             <a href="https://github.com/{{ group.owner }}/{{ group.repo }}/pulls">{{ group.owner }}/{{ group.repo }}</a> - {{ group.branch }}
          </th>
          <th class="state"><span class="glyphicon glyphicon-comment"></span></th>
@@ -35,7 +36,8 @@
          <th class="mergeable" title="Mergeable status"><span class="glyphicon glyphicon-random" title="Mergeable"></span></th>
          <th class="reviews"><span class="glyphicon glyphicon-thumbs-up"></span></th>
          <th class="reviews"><span class="glyphicon glyphicon-thumbs-down"></span></th>
-         <th class="queue">Weight</th>
+         <th class="queue">Weight
+         </th>
      </tr>
      </thead>
      <tbody>
@@ -43,8 +45,8 @@
              <td class="title">
                  <div class="pull-right"><span style="color:green">+{{ pull.additions }}</span> / <span style="color:red">-{{ pull.deletions }}</span></div>
                  <a href="{{ pull.user.html_url }}"><img ng-src="{{ pull.user.avatar_url }}" class="avatar" alt="{{ pull.user.login }}"></a>
+                 <a href="#" ng-click="toggle_commits_info(pull)" style="display:inline-block;padding-left:5px;"><span ng-class="{'glyphicon glyphicon-circle-arrow-down': pull.open_commits_row, 'glyphicon glyphicon-circle-arrow-right': !pull.open_commits_row}"></a>
                  <a href="{{ pull.html_url }}" target="_blank">{{ pull.title }} <span style="color:grey">#{{ pull.number }}</span></a>
-                 <a href="#" ng-click="toggle_commits_info(pull)" style="display:inline-block;padding-left:5px;"><span ng-class="{'glyphicon glyphicon-chevron-up': pull.open_commits_row, 'glyphicon glyphicon glyphicon-chevron-down': !pull.open_commits_row}"></a>
              </td>
              <td class="state"><a href="{{ pull.html_url }}" target="_blank">{{ pull.comments }}</a></td>
              <td class="state"><a href="{{ pull.html_url }}/commits" target="_blank">{{ pull.commits }}</a></td>
@@ -88,7 +90,7 @@
             <td colspan="10">
                 <a href="#" class="pull-right" ng-click="toggle_commits_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
                 <a href="#" class="pull-right" style="margin-right:5px" ng-click="open_all_commits(pull)"><span class="glyphicon glyphicon-new-window"></span></a>
-                <ul>
+                <ul style="padding-left: 70px;">
                     <li ng-repeat="commit in pull.pastamaker_commits">
                         <a href="https://github.com/{{ group.owner }}/{{ group.repo }}/pull/{{ pull.number }}/commits/{{ commit.sha }}" target="_blank" style="display:inline-block;padding-right:10px;">{{ commit | GetCommitTitle }}</a>
                         <span style="color:green">+{{ commit.stats.additions }}</span> / <span style="color:red">-{{ commit.stats.deletions }}</span>
