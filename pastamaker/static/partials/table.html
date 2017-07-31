@@ -86,7 +86,7 @@
         </tr>
         <tr ng-if="pull.open_commits_row">
             <td colspan="10">
-                <a href="#" class="pull-right" ng-click="toggle_travis_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
+                <a href="#" class="pull-right" ng-click="toggle_commits_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
                 <a href="#" class="pull-right" style="margin-right:5px" ng-click="open_all_commits(pull)"><span class="glyphicon glyphicon-new-window"></span></a>
                 <ul>
                     <li ng-repeat="commit in pull.pastamaker_commits">
