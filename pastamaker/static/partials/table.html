@@ -54,11 +54,12 @@
              <td class="last-updated"><time am-time-ago="pull.updated_at"></time></td>
              <td class="state">
                  <a href="#" ng-click="toggle_travis_info(pull)">
-                     <span ng-if="pull.travis_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
-                     <span ng-if="pull.travis_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
-                     <span ng-if="pull.travis_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
-                     <span ng-if="pull.travis_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-cog"></span>
-                     <span ng-if="pull.travis_state == 'unknown'" title="Latest test unknown" class="maybe glyphicon glyphicon-question-sign"></span>
+                    <span ng-if="pull.travis_detail.resume_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
+                    <span ng-if="pull.travis_detail.resume_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
+                    <span ng-if="pull.travis_detail.resume_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
+                    <span ng-if="pull.travis_detail.resume_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
+                    <span ng-if="pull.travis_detail.resume_state == 'working'" title="Latest test pending" class="maybe glyphicon glyphicon-cog"></span>
+                    <span ng-if="pull.travis_detail.resume_state == 'unknown'" title="Latest test unknown" class="maybe glyphicon glyphicon-question-sign"></span>
                  </a>
              </td>
              <td class="mergeable">
@@ -102,18 +103,19 @@
             <td colspan="10">
                 <a href="#" class="pull-right" ng-click="toggle_travis_info(pull)"><span class="glyphicon glyphicon-remove"><span></a>
                 <a href="#" class="pull-right" style="margin-right:5px" ng-click="refresh_travis(pull)"><span class="glyphicon glyphicon-refresh"></span></a>
-                <a href="{{ pull.travis_url }}" target="_blank" title="state: {{ pull.travis_build.state }}">
-                    <span ng-if="pull.travis_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
-                    <span ng-if="pull.travis_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
-                    <span ng-if="pull.travis_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
-                    <span ng-if="pull.travis_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-cog"></span>
-                    <span ng-if="pull.travis_state == 'unknown'" title="Latest test unknown" class="maybe glyphicon glyphicon-question-sign"></span>
+                <a href="{{ pull.travis_url }}" target="_blank" title="state: {{ pull.travis_detail.state }}">
+                    <span ng-if="pull.travis_detail.resume_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
+                    <span ng-if="pull.travis_detail.resume_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
+                    <span ng-if="pull.travis_detail.resume_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
+                    <span ng-if="pull.travis_detail.resume_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
+                    <span ng-if="pull.travis_detail.resume_state == 'working'" title="Latest test pending" class="maybe glyphicon glyphicon-cog"></span>
+                    <span ng-if="pull.travis_detail.resume_state == 'unknown'" title="Latest test unknown" class="maybe glyphicon glyphicon-question-sign"></span>
                 </a>
-                <a href="{{ pull.travis_url }}" target="_blank" title="state: {{ pull.travis_build.state }}">
-                    <strong style="display:inline-block; width: 67px" ng-class="{maybe: ['pending', 'unknown'].indexOf(pull.travis_state) !== -1, good: pull.travis_state == 'success', bad: ['failure', 'error'].indexOf(pull.travis_state) !== -1}">#{{ pull.travis_build.number }}</strong>
-                    <i>{{ pull.travis_build.job_ids.length }} jobs started <time am-time-ago="pull.travis_build.started_at" /></i>
+                <a href="{{ pull.travis_url }}" target="_blank" title="state: {{ pull.travis_detail.state }}">
+                    <strong style="display:inline-block; width: 67px" ng-class="{maybe: ['pending', 'unknown'].indexOf(pull.travis_state) !== -1, good: pull.travis_state == 'success', bad: ['failure', 'error'].indexOf(pull.travis_state) !== -1}">#{{ pull.travis_detail.number }}</strong>
+                    <i>{{ pull.travis_detail.job_ids.length }} jobs started <time am-time-ago="pull.travis_detail.started_at" /></i>
                 </a>
-                <div ng-repeat="job in pull.travis_jobs | orderBy: JobSorter" title="{{ job.state }} / {{ job.status }}" style="padding-left: 7px">
+                <div ng-repeat="job in pull.travis_detail.jobs | orderBy: JobSorter" title="{{ job.state }} / {{ job.status }}" style="padding-left: 7px">
                     <span ng-if="job.state == 'received'" class="maybe glyphicon glyphicon-option-horizontal"></span>
                     <span ng-if="job.state == 'queued'" class="maybe glyphicon glyphicon-option-horizontal"></span>
                     <span ng-if="job.state == 'started'" class="maybe glyphicon glyphicon-cog"></span>

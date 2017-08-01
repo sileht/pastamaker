@@ -98,10 +98,27 @@ class PastaMakerEngine(object):
             LOG.info("No pull request found in the event, ignoring")
             return
 
-        if (event_type == "status" and data["state"] == "pending" and
-                self.is_cached_pull_travis_ci_state_pending(
-                    current_branch, incoming_pull.number)):
-            return
+        # NOTE(sileht): Don't keep pending to refresh travis detail
+        # if (event_type == "status" and data["state"] == "pending" and
+        #         self.is_cached_pull_travis_ci_state_pending(
+        #             current_branch, incoming_pull.number)):
+        #     return
+
+        if (event_type == "status"
+                and data["state"] in ["failure", "error", "success"]
+                and incoming_pull.travis_detail):
+            message = []
+            for job in incoming_pull.travis_detail["jobs"]:
+                message.append('- [%s](%s): %s' % (
+                    job["config"]["env"],
+                    job["log_url"],
+                    job["state"].upper()
+                ))
+            message = "\n".join(message)
+            LOG.debug("%s POST comment: %s" % (incoming_pull.pretty(),
+                                               message))
+            incoming_pull.create_issue_comment(message)
+
         # protect the branch before doing anything
         automerge = True
         try:

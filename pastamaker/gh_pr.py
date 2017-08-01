@@ -23,6 +23,7 @@ import six.moves
 
 from pastamaker import config
 # from pastamaker import gh_commit
+from pastamaker import travis
 from pastamaker import webhack
 
 LOG = logging.getLogger(__name__)
@@ -142,6 +143,7 @@ def pastamaker_raw_data(self):
     data["pastamaker_weight"] = self.pastamaker_weight
     data["travis_state"] = self.travis_state
     data["travis_url"] = self.travis_url
+    data["travis_detail"] = self.travis_detail
     data["approvals"] = self.approvals
     data["pastamaker_commits"] = [c.raw_data for c in self.pastamaker_commits]
     return data
@@ -285,6 +287,7 @@ def monkeypatch_github():
     p.pretty = pretty
     p.travis_state = travis_state
     p.travis_url = travis_url
+    p.travis_detail = travis.detail
     p.approved = approved
     p.approvals = approvals
 

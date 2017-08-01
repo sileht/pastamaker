@@ -124,28 +124,27 @@ app.classy.controller({
                 }
                 this.opened_travis_tabs[repo].push(pull.number);
                 pull.open_travis_row = true;
-                this.refresh_travis(pull);
+                // this.refresh_travis(pull);
             } else {
                 pull.open_travis_row = false;
                 this.opened_travis_tabs[repo] = this.opened_travis_tabs[repo].filter(e => e !== pull.number)
             }
         },
         refresh_travis: function(pull) {
-            pull.travis_build = undefined;
-            pull.travis_jobs = [];
+            pull.travis_detail = undefined;
             var build_id = pull.travis_url.split("?")[0].split("/").slice(-1)[0];
             var v2_headers = { "Accept": "application/vnd.travis-ci.2+json" };
             var travis_base_url = 'https://api.travis-ci.org'
             this.$http.get(travis_base_url + "/builds/" + build_id,
                            {headers: v2_headers}
             ).success(function(data, status, headers) {
-                pull.travis_build = data.build;
-                pull.travis_jobs = [];
+                pull.travis_detail = data.build;
+                pull.travis_detail.jobs = [];
                 data.build.job_ids.forEach(function(job_id) {
                     this.$http.get(travis_base_url + "/jobs/" + job_id,
                                    {headers: v2_headers}
                     ).success(function(data, status, headers) {
-                        pull.travis_jobs.push(data.job);
+                        pull.travis_detail.jobs.push(data.job);
                     }.bind(this));
                 }.bind(this))
             }.bind(this));
