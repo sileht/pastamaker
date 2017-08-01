@@ -34,8 +34,8 @@ def detail(self):
             self._pastamaker_travis_detail = None
             return None
         build = r.json()["build"]
+        build["resume_state"] = self.travis_state
         build["jobs"] = []
-        state = None
         for job_id in build["job_ids"]:
             r = requests.get(BASE_URL + "/jobs/%s" % job_id,
                              headers=V2_HEADERS)
@@ -46,19 +46,9 @@ def detail(self):
                                                    job["state"],
                                                    job["log_url"]))
                 build["jobs"].append(job)
-                if job["state"] in ["errored", "failed"]:
-                    state = job["state"]
-                    break
-                elif job["state"] in ["started"]:
-                    state = "working"
-                elif job["state"] in ["received", "queued", "created"]:
-                    if state != "started":
-                        state = "pending"
-                elif job["state"] in ["passed"]:
-                    state = "success"
-                else:
-                    LOG.error("Unknown state")
-        build["resume_state"] = state
+                if (self.travis_state == "pending" and
+                        job["state"] == "started"):
+                    build["resume_state"] = "working"
         LOG.debug("%s: build %s %s/%s" % (self.pretty(), build_id,
                                           build["state"],
                                           build["resume_state"]))

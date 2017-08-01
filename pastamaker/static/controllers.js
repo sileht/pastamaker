@@ -139,11 +139,15 @@ app.classy.controller({
                            {headers: v2_headers}
             ).success(function(data, status, headers) {
                 pull.travis_detail = data.build;
+                pull.travis_detail.resume_state = pull.travis_state;
                 pull.travis_detail.jobs = [];
                 data.build.job_ids.forEach(function(job_id) {
                     this.$http.get(travis_base_url + "/jobs/" + job_id,
                                    {headers: v2_headers}
                     ).success(function(data, status, headers) {
+                        if (pull.travis_state == "pending" && data.job.state == "started") {
+                            pull.travis_detail.resume_state = "working";
+                        }
                         pull.travis_detail.jobs.push(data.job);
                     }.bind(this));
                 }.bind(this))
