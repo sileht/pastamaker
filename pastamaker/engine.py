@@ -107,7 +107,9 @@ class PastaMakerEngine(object):
         if (event_type == "status"
                 and data["state"] in ["failure", "error", "success"]
                 and incoming_pull.travis_detail):
-            message = []
+            message = ["Tests %s for HEAD %s\n" % (
+                incoming_pull.travis_state.upper(),
+                incoming_pull.head.sha)]
             for job in incoming_pull.travis_detail["jobs"]:
                 message.append('- [%s](%s): %s' % (
                     job["config"]["env"],
