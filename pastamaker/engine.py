@@ -104,8 +104,13 @@ class PastaMakerEngine(object):
         #             current_branch, incoming_pull.number)):
         #     return
 
+        # NOTE(sileht): We check the state of incoming_pull and the event
+        # because user can have restart a travis job between the event
+        # received and when we looks at it with travis API
+        ending_states = ["failure", "error", "success"]
         if (event_type == "status"
-                and data["state"] in ["failure", "error", "success"]
+                and data["state"] in ending_states
+                and incoming_pull.travis_state in ending_states
                 and incoming_pull.travis_detail):
             message = ["Tests %s for HEAD %s\n" % (
                 incoming_pull.travis_state.upper(),
