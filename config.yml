@@ -4,6 +4,7 @@ required_approvals:
   -@master: 2
   sileht/pastamaker: 1
   gnocchixyz/gnocchi-docker: 1
+  gnocchixyz/collectd-gnocchi: 1
   gnocchixyz/tools-tester: 1
   gnocchixyz/tools-tester@master: 1
   gnocchixyz/grafana-gnocchi-datasource: 1
