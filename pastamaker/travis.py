@@ -28,6 +28,9 @@ V2_HEADERS = {"Accept": "application/vnd.travis-ci.2+json",
 @property
 def detail(self):
     if not hasattr(self, "_pastamaker_travis_detail"):
+        if not self.travis_url or self.travis_url == "#":
+            self._pastamaker_travis_detail = None
+            return None
         build_id = self.travis_url.split("?")[0].split("/")[-1]
         r = requests.get(BASE_URL + "/builds/" + build_id,
                          headers=V2_HEADERS)
