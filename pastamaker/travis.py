@@ -21,7 +21,8 @@ import requests
 LOG = logging.getLogger(__name__)
 
 BASE_URL = 'https://api.travis-ci.org'
-V2_HEADERS = {"Accept": "application/vnd.travis-ci.2+json"}
+V2_HEADERS = {"Accept": "application/vnd.travis-ci.2+json",
+              "User-Agent": "Pastamaker/1.0.0"}
 
 
 @property
