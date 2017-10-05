@@ -10,3 +10,4 @@ six
 pyyaml
 ujson
 gevent
+lz4

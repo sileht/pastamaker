@@ -24,6 +24,7 @@ import os
 
 import flask
 import github
+import lz4.block
 import rq
 import ujson
 
@@ -120,9 +121,12 @@ def _get_status(r):
     queues = []
     for key in r.keys("queues~*~*~*"):
         _, owner, repo, branch = key.split("~")
-        pulls = ujson.loads(r.get(key) or "[]")
         updated_at = None
-        if pulls:
+
+        payload = r.get(key)
+        if payload:
+            payload = lz4.block.decompress(payload)
+            pulls = ujson.loads(payload)
             updated_at = list(sorted([p["updated_at"] for p in pulls]))[-1]
         queues.append({
             "owner": owner,

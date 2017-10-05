@@ -18,6 +18,7 @@ import logging
 import operator
 
 import github
+import lz4.block
 import six.moves
 import ujson
 
@@ -191,8 +192,9 @@ class PastaMakerEngine(object):
     def set_cache_queues(self, branch, pulls):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
         if pulls:
-            self._redis.set(key, ujson.dumps(
-                [p.pastamaker_raw_data for p in pulls]))
+            payload = ujson.dumps([p.pastamaker_raw_data for p in pulls])
+            payload = lz4.block.compress(payload)
+            self._redis.set(key, payload)
         else:
             self._redis.delete(key)
         self._redis.publish("update", key)
