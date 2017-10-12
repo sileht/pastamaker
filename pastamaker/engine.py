@@ -100,10 +100,9 @@ class PastaMakerEngine(object):
             return
 
         # NOTE(sileht): Don't keep pending to refresh travis detail
-        # if (event_type == "status" and data["state"] == "pending" and
-        #         self.is_cached_pull_travis_ci_state_pending(
-        #             current_branch, incoming_pull.number)):
-        #     return
+        if event_type == "status" and data["state"] == "pending":
+            self.update_travis_ci_state(current_branch, incoming_pull)
+            return
 
         # NOTE(sileht): We check the state of incoming_pull and the event
         # because user can have restart a travis job between the event
@@ -149,7 +148,8 @@ class PastaMakerEngine(object):
 
         queues = self.get_pull_requests_queue(current_branch)
 
-        self.set_cache_queues(current_branch, queues)
+        raw_queues = [p.pastamaker_raw_data for p in queues]
+        self.set_cache_queues(current_branch, raw_queues)
         if queues:
             if automerge:
                 self.proceed_queues(queues)
@@ -182,17 +182,19 @@ class PastaMakerEngine(object):
                 if p.update_branch():
                     LOG.info("%s branch updated", p.pretty())
 
-    def is_cached_pull_travis_ci_state_pending(self, branch, number):
+    def update_travis_ci_state(self, branch, incoming_pull):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
-        for pull in ujson.loads(self._redis.get(key)):
-            if pull["number"] == number:
-                return pull["travis_state"] == "pending"
-        return False
+        pulls = ujson.loads(lz4.block.decompress(self._redis.get(key)))
+        for i, pull in enumerate(pulls):
+            if pull["number"] == incoming_pull.number:
+                incoming_pull.pastamaker_update(force=True)
+                pulls[i] = incoming_pull.pastamaker_raw_data
+        self.set_cache_queues(branch, pulls)
 
-    def set_cache_queues(self, branch, pulls):
+    def set_cache_queues(self, branch, raw_pulls):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
-        if pulls:
-            payload = ujson.dumps([p.pastamaker_raw_data for p in pulls])
+        if raw_pulls:
+            payload = ujson.dumps(raw_pulls)
             payload = lz4.block.compress(payload)
             self._redis.set(key, payload)
         else:

@@ -214,6 +214,7 @@ def pastamaker_update(self, force=False):
     for attr in ["_pastamaker_commits",
                  "_pastamaker_weight",
                  "_pastamaker_ci_statuses",
+                 "_pastamaker_travis_detail",
                  "_pastamaker_approvals"]:
         if hasattr(self, attr):
             delattr(self, attr)
