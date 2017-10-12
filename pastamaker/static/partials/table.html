@@ -34,6 +34,7 @@
          <th class="last-updated">Last updated</th>
          <th class="state" title="Indicates its status">CI</th>
          <th class="mergeable" title="Mergeable status"><span class="glyphicon glyphicon-random" title="Mergeable"></span></th>
+         <th class="milestone" title="Milestone"><span class="glyphicon glyphicon-cargo" title="Milestone"></span></th>
          <th class="reviews"><span class="glyphicon glyphicon-thumbs-up"></span></th>
          <th class="reviews"><span class="glyphicon glyphicon-thumbs-down"></span></th>
          <th class="queue">Weight
@@ -66,6 +67,9 @@
                      <span ng-if="pull.mergeable == true" title="Can be merged, {{ pull.mergeable_state }}" class="good glyphicon glyphicon-ok"></span>
                      <span ng-if="pull.mergeable == false" title="Cannot be merged, {{ pull.mergeable_state }}" class="bad glyphicon glyphicon-remove"></span>
                      <span ng-if="pull.mergeable == null" title="Unknown status, {{ pull.mergeable_state }}" class="bad glyphicon glyphicon-question-sign"></span>
+             </td>
+             <td class="milestone">
+               <a href="{{ pull.milestone.url }}" target="_blank">{{ pull.milestone.title }}</a>
              </td>
              <td class="reviews info">
                  <a ng-repeat="user in pull.approvals[0]"
