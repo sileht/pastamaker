@@ -69,7 +69,7 @@
                      <span ng-if="pull.mergeable == null" title="Unknown status, {{ pull.mergeable_state }}" class="bad glyphicon glyphicon-question-sign"></span>
              </td>
              <td class="milestone">
-               <a href="{{ pull.milestone.url }}" target="_blank">{{ pull.milestone.title }}</a>
+               <a href="{{ pull.milestone.html_url }}" target="_blank">{{ pull.milestone.title }}</a>
              </td>
              <td class="reviews info">
                  <a ng-repeat="user in pull.approvals[0]"
