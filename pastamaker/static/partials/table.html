@@ -92,7 +92,7 @@
             </td>
         </tr>
         <tr ng-if="pull.open_commits_row">
-            <td colspan="10">
+            <td colspan="11">
                 <a href="#" class="pull-right" ng-click="toggle_commits_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
                 <a href="#" class="pull-right" style="margin-right:5px" ng-click="open_all_commits(pull)"><span class="glyphicon glyphicon-new-window"></span></a>
                 <ul style="padding-left: 70px;">
@@ -104,7 +104,7 @@
             </td>
         </tr>
         <tr ng-repeat-end ng-if="pull.open_travis_row">
-            <td colspan="10">
+            <td colspan="11">
                 <a href="#" class="pull-right" ng-click="toggle_travis_info(pull)"><span class="glyphicon glyphicon-remove"><span></a>
                 <a href="#" class="pull-right" style="margin-right:5px" ng-click="refresh_travis(pull)"><span class="glyphicon glyphicon-refresh"></span></a>
                 <a href="{{ pull.travis_url }}" target="_blank" title="state: {{ pull.travis_detail.state }}">
