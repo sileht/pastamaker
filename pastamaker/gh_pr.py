@@ -203,6 +203,8 @@ def pastamaker_weight(self):
                 weight = -1
         else:
             weight = -1
+        if weight >= 0 and self.milestone is not None:
+            weight += 1
         self._pastamaker_weight = weight
         # LOG.info("%s prio: %s, %s, %s, %s, %s", self.pretty(), weight,
         #          self.approved, self.mergeable_state, self.travis_state,
