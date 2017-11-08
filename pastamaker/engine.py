@@ -76,6 +76,8 @@ class PastaMakerEngine(object):
             # Don't compute the queue for nothing
             if data["context"].startswith("pastamaker/"):
                 return
+            elif data["context"] == "continuous-integration/travis-ci/push":
+                return
 
         incoming_pull = gh_pr.from_event(self._r, data)
         if not incoming_pull and event_type == "status":
