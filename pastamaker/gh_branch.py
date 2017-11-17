@@ -41,7 +41,7 @@ def is_protected(g_repo, branch, enforce_admins):
 
     headers, data = g_repo._requester.requestJsonAndCheck(
         "GET", g_repo.url + "/branches/" + branch + '/protection',
-        headers={'Accept': 'application/vnd.github.loki-preview+json'}
+        headers={'Accept': 'application/vnd.github.v3+json'}
     )
 
     # NOTE(sileht): delete urls from the payload
@@ -79,7 +79,6 @@ def protect(g_repo, branch, enforce_admins):
         g = github.Github(config.WEBHACK_USERNAME, config.WEBHACK_PASSWORD)
     g_repo = g.get_repo(g_repo.full_name)
 
-    g_repo.protect_branch(branch, enabled=True)
     # NOTE(sileht): Not yet part of the API
     # maybe soon https://github.com/PyGithub/PyGithub/pull/527
     g_repo._requester.requestJsonAndCheck(
@@ -99,7 +98,7 @@ def protect(g_repo, branch, enforce_admins):
             'restrictions': None,
             'enforce_admins': enforce_admins,
         },
-        headers={'Accept': 'application/vnd.github.loki-preview+json'}
+        headers={'Accept': 'application/vnd.github.v3+json'}
     )
 
 
