@@ -11,4 +11,3 @@ pyyaml
 ujson
 gevent
 lz4
-newrelic
