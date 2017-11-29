@@ -14,7 +14,7 @@ required_approvals:
   -@master: 2
 
 branch_protection_enforce_admins:
-  default: true
+  default: false
 
 branch_protection_contexts:
   default:

@@ -11,3 +11,6 @@ branch_protection_enforce_admins:
 branch_protection_contexts:
   default:
     - continuous-integration/travis-ci
+  sileht/cotyledon:
+    - continuous-integration/tea
+    - continuous-integration/travis-ci

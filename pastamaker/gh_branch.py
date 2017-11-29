@@ -15,9 +15,6 @@
 # under the License.
 
 import logging
-import os
-
-import github
 
 from pastamaker import config
 
@@ -25,17 +22,7 @@ LOG = logging.getLogger(__name__)
 
 
 def is_protected(g_repo, branch, enforce_admins, contexts):
-    # FIXME(sileht): I have asked Github about why this API doesn't work
-    # with integration token. Use the webhack user as workaround
-    # https://platform.github.community/t/branches-protection-api/2480
-    token = os.getenv("PASTAMAKER_TOKEN_%s" % g_repo.owner.login)
-    if token:
-        g = github.Github(token)
-    else:
-        g = github.Github(config.WEBHACK_USERNAME, config.WEBHACK_PASSWORD)
-    g_repo = g.get_repo(g_repo.full_name)
-
-    g_branch = g_repo.get_protected_branch(branch)
+    g_branch = g_repo.get_branch(branch)
     if not g_branch.protected:
         return False
 
@@ -50,8 +37,28 @@ def is_protected(g_repo, branch, enforce_admins, contexts):
     del data["required_status_checks"]["contexts_url"]
     del data["required_pull_request_reviews"]["url"]
     del data["enforce_admins"]["url"]
+    data["required_status_checks"]["contexts"] = sorted(
+        data["required_status_checks"]["contexts"])
 
-    excepted = {
+    expected = {
+        'required_pull_request_reviews': {
+            "dismiss_stale_reviews": True,
+            "require_code_owner_reviews": False,
+        },
+        'required_status_checks': {
+            'strict': True,
+            'contexts': sorted(contexts),
+        },
+        'enforce_admins': {
+            "enabled": enforce_admins
+        }
+    }
+
+    return expected == data
+
+
+def protect(g_repo, branch, enforce_admins, contexts):
+    p = {
         'required_pull_request_reviews': {
             "dismiss_stale_reviews": True,
             "require_code_owner_reviews": False,
@@ -60,24 +67,12 @@ def is_protected(g_repo, branch, enforce_admins, contexts):
             'strict': True,
             'contexts': contexts,
         },
-        'enforce_admins': {
-            "enabled": enforce_admins
-        }
+        'restrictions': None,
+        'enforce_admins': enforce_admins,
     }
 
-    return excepted == data
-
-
-def protect(g_repo, branch, enforce_admins, contexts):
-    # FIXME(sileht): I have asked Github about why this API doesn't work
-    # with integration token. Use the webhack user as workaround
-    # https://platform.github.community/t/branches-protection-api/2480
-    token = os.getenv("PASTAMAKER_TOKEN_%s" % g_repo.owner.login)
-    if token:
-        g = github.Github(token)
-    else:
-        g = github.Github(config.WEBHACK_USERNAME, config.WEBHACK_PASSWORD)
-    g_repo = g.get_repo(g_repo.full_name)
+    if g_repo.organization:
+        p['required_pull_request_reviews']['dismissal_restrictions'] = {}
 
     # NOTE(sileht): Not yet part of the API
     # maybe soon https://github.com/PyGithub/PyGithub/pull/527
@@ -85,19 +80,7 @@ def protect(g_repo, branch, enforce_admins, contexts):
         'PUT',
         "{base_url}/branches/{branch}/protection".format(base_url=g_repo.url,
                                                          branch=branch),
-        input={
-            'required_pull_request_reviews': {
-                "dismissal_restrictions": {},
-                "dismiss_stale_reviews": True,
-                "require_code_owner_reviews": False,
-            },
-            'required_status_checks': {
-                'strict': True,
-                'contexts': contexts,
-            },
-            'restrictions': None,
-            'enforce_admins': enforce_admins,
-        },
+        input=p,
         headers={'Accept': 'application/vnd.github.v3+json'}
     )
 
