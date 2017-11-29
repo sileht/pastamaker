@@ -15,3 +15,7 @@ required_approvals:
 
 branch_protection_enforce_admins:
   default: true
+
+branch_protection_contexts:
+  default:
+    - continuous-integration/travis-ci

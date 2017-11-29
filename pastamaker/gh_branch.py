@@ -24,7 +24,7 @@ from pastamaker import config
 LOG = logging.getLogger(__name__)
 
 
-def is_protected(g_repo, branch, enforce_admins):
+def is_protected(g_repo, branch, enforce_admins, contexts):
     # FIXME(sileht): I have asked Github about why this API doesn't work
     # with integration token. Use the webhack user as workaround
     # https://platform.github.community/t/branches-protection-api/2480
@@ -58,7 +58,7 @@ def is_protected(g_repo, branch, enforce_admins):
         },
         'required_status_checks': {
             'strict': True,
-            'contexts': ['continuous-integration/travis-ci'],
+            'contexts': contexts,
         },
         'enforce_admins': {
             "enabled": enforce_admins
@@ -68,7 +68,7 @@ def is_protected(g_repo, branch, enforce_admins):
     return excepted == data
 
 
-def protect(g_repo, branch, enforce_admins):
+def protect(g_repo, branch, enforce_admins, contexts):
     # FIXME(sileht): I have asked Github about why this API doesn't work
     # with integration token. Use the webhack user as workaround
     # https://platform.github.community/t/branches-protection-api/2480
@@ -93,7 +93,7 @@ def protect(g_repo, branch, enforce_admins):
             },
             'required_status_checks': {
                 'strict': True,
-                'contexts': ['continuous-integration/travis-ci'],
+                'contexts': contexts,
             },
             'restrictions': None,
             'enforce_admins': enforce_admins,
@@ -106,7 +106,10 @@ def protect_if_needed(g_repo, branch):
     enforce_admins = config.get_value_from(
         config.BRANCH_PROTECTION_ENFORCE_ADMINS,
         g_repo.full_name, branch, True)
-    if not is_protected(g_repo, branch, enforce_admins):
+    contexts = config.get_value_from(
+        config.BRANCH_PROTECTION_CONTEXTS,
+        g_repo.full_name, branch, True)
+    if not is_protected(g_repo, branch, enforce_admins, contexts):
         LOG.warning("Branch %s of %s is misconfigured, configuring it",
                     branch, g_repo.full_name)
-        protect(g_repo, branch, enforce_admins)
+        protect(g_repo, branch, enforce_admins, contexts)

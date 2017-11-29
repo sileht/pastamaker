@@ -48,7 +48,15 @@ print("""
 
 
 def get_value_from(config_options, repo, branch, default):
-    for name in ["%s@%s" % (repo, branch), repo, "-@%s" % branch, "default"]:
+    login, project = repo.split("/")
+    for name in ["%s@%s" % (repo, branch),
+                 repo,
+                 "%s/-@%s" % (login, branch),
+                 "-/%s@%s" % (project, project),
+                 "%s/-" % login,
+                 "-/%s" % project,
+                 "-@%s" % branch,
+                 "default"]:
         if name in config_options:
             value = config_options[name]
             break

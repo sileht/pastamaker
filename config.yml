@@ -1,15 +1,13 @@
 ---
 required_approvals:
   default: 1
-  -@master: 2
-  sileht/pastamaker: 1
-  gnocchixyz/gnocchi-docker: 1
-  gnocchixyz/collectd-gnocchi: 1
-  gnocchixyz/tools-tester: 1
-  gnocchixyz/tools-tester@master: 1
-  gnocchixyz/grafana-gnocchi-datasource: 1
+  gnocchixyz/gnocchi@master: 2
+  gnocchixyz/python-gnocchiclient@master: 2
 
 branch_protection_enforce_admins:
-  default: true
-  sileht/pastamaker: false
-  gnocchixyz/grafana-gnocchi-datasource: false
+  default: false
+  gnocchixyz/-: true
+
+branch_protection_contexts:
+  default:
+    - continuous-integration/travis-ci
