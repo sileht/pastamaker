@@ -112,6 +112,8 @@ class PastaMakerEngine(object):
         ending_states = ["failure", "error", "success"]
         if (event_type == "status"
                 and data["state"] in ending_states
+                and data["context"] in ["continuous-integration/travis-ci",
+                                        "continuous-integration/travis-ci/pr"]
                 and incoming_pull.travis_state in ending_states
                 and incoming_pull.travis_detail):
             message = ["Tests %s for HEAD %s\n" % (
