@@ -70,6 +70,7 @@ class PastaMakerEngine(object):
                 p_info = self._get_logprefix()
             extra = ", ignored"
 
+        LOG.info("***********************************************************")
         LOG.info("%s received event '%s'%s", p_info, event_type, extra)
 
     def handle(self, event_type, data):
