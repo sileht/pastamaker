@@ -28,16 +28,18 @@ TRAVIS_BASE_URL = 'https://api.travis-ci.org'
 TRAVIS_V2_HEADERS = {"Accept": "application/vnd.travis-ci.2+json",
                      "User-Agent": "Pastamaker/1.0.0"}
 
+UNUSABLE_STATES = ["unknown", "unstable", None]
+
 
 def ensure_mergable_state(pull):
-    if pull.is_merged() or pull.mergeable_state not in ["unknown", None]:
+    if pull.is_merged() or pull.mergeable_state not in UNUSABLE_STATES:
         return pull
 
     # Github is currently processing this PR, we wait the completion
     for i in range(0, 5):
         LOG.info("%s, refreshing...", pull.pretty())
         pull.update()
-        if pull.is_merged() or pull.mergeable_state not in ["unknown", None]:
+        if pull.is_merged() or pull.mergeable_state not in UNUSABLE_STATES:
             break
         time.sleep(0.42)  # you known, this one always work
 
