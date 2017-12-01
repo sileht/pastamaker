@@ -238,7 +238,8 @@ class PastaMakerEngine(object):
                 found = True
             pulls[i] = pull
         if incoming_pull.is_merged():
-            pulls.remove(incoming_pull)
+            if incoming_pull in pulls:
+                pulls.remove(incoming_pull)
         elif not found:
             pulls.append(incoming_pull)
         return self.sort_save_and_log_queues(branch, pulls)
