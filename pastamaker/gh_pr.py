@@ -86,7 +86,7 @@ def pastamaker_github_post_check_status(self):
 
 def pastamaker_travis_post_build_results(self):
     message = ["Tests %s for HEAD %s\n" % (
-        self.travis_state.upper(),
+        self.pastamaker["travis_state"].upper(),
         self.head.sha)]
     for job in self.travis_detail["jobs"]:
         message.append('- [%s](%s): %s' % (
