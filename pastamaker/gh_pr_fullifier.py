@@ -34,12 +34,12 @@ def ensure_mergable_state(pull):
         return pull
 
     # Github is currently processing this PR, we wait the completion
-    for i in range(0, 10):
+    for i in range(0, 5):
         LOG.info("%s, refreshing...", pull.pretty())
         pull.update()
         if pull.is_merged() or pull.mergeable_state not in ["unknown", None]:
             break
-        time.sleep(0.042)  # you known, this one always work
+        time.sleep(0.42)  # you known, this one always work
 
     LOG.info("%s, refreshed", pull.pretty())
     return pull
