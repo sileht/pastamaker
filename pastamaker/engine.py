@@ -211,7 +211,11 @@ class PastaMakerEngine(object):
 
     def get_updated_queues_from_cache(self, branch, incoming_pull):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
-        pulls = ujson.loads(lz4.block.decompress(self._redis.get(key)))
+        data = self._redis.get(key)
+        if data:
+            pulls = ujson.loads(lz4.block.decompress(data))
+        else:
+            pulls = []
         found = False
         for i, pull in list(enumerate(pulls)):
             pull = gh_pr.from_cache(self._r, pull)
