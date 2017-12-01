@@ -28,7 +28,7 @@ TRAVIS_BASE_URL = 'https://api.travis-ci.org'
 TRAVIS_V2_HEADERS = {"Accept": "application/vnd.travis-ci.2+json",
                      "User-Agent": "Pastamaker/1.0.0"}
 
-UNUSABLE_STATES = ["unknown", "unstable", None]
+UNUSABLE_STATES = ["unknown", None]
 
 
 def ensure_mergable_state(pull):
@@ -152,12 +152,12 @@ def compute_travis_url(pull):
 def compute_weight(pull):
     if not pull.pastamaker["approved"]:
         weight = -1
-    elif (pull.mergeable_state == "clean"
+    elif (pull.mergeable_state in ["clean", "unstable"]
           and pull.pastamaker["travis_state"] == "success"
           and pull.pastamaker_branch_synced_state == "clean"):
         # Best PR ever, up2date and CI OK
         weight = 11
-    elif pull.mergeable_state == "clean":
+    elif pull.mergeable_state in ["clean", "unstable"]:
         weight = 10
     elif (pull.mergeable_state == "blocked"
           and pull.pastamaker["travis_state"] == "pending"

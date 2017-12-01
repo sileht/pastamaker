@@ -189,7 +189,7 @@ class PastaMakerEngine(object):
         p = queues[0]
         LOG.info("%s selected", p.pretty())
 
-        if p.mergeable_state == "clean":
+        if p.pastamaker["weight"] >= 11:
             if p.pastamaker_merge():
                 # Wait for the closed event now
                 LOG.info("%s -> merged", p.pretty())
@@ -211,7 +211,7 @@ class PastaMakerEngine(object):
                 LOG.info("%s -> github combined status != success", p.pretty())
 
         else:
-            LOG.info("%s -> mergeable_state != clean/behind", p.pretty())
+            LOG.info("%s -> weight < 10", p.pretty())
 
     def set_cache_queues(self, branch, raw_pulls):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
