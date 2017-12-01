@@ -58,3 +58,24 @@ def detail(self):
                                           build["resume_state"]))
         self._pastamaker_travis_detail = build
     return self._pastamaker_travis_detail
+
+
+def update(self, force=False):
+    if force and hasattr(self, "_pastamaker_travis_detail"):
+        delattr(self, "_pastamaker_travis_detail")
+    return self.travis_detail
+
+
+def post_report(self):
+    message = ["Tests %s for HEAD %s\n" % (
+        self.travis_state.upper(),
+        self.head.sha)]
+    for job in self.travis_detail["jobs"]:
+        message.append('- [%s](%s): %s' % (
+            job["config"]["env"],
+            job["log_url"],
+            job["state"].upper()
+        ))
+    message = "\n".join(message)
+    LOG.debug("%s POST comment: %s" % (self.pretty(), message))
+    self.create_issue_comment(message)

@@ -137,19 +137,6 @@ def pastamaker_ci_statuses(self):
 
 
 @property
-def pastamaker_raw_data(self):
-    data = copy.deepcopy(self.raw_data)
-    data["pastamaker_ci_statuses"] = self.pastamaker_ci_statuses
-    data["pastamaker_weight"] = self.pastamaker_weight
-    data["travis_state"] = self.travis_state
-    data["travis_url"] = self.travis_url
-    data["travis_detail"] = self.travis_detail
-    data["approvals"] = self.approvals
-    data["pastamaker_commits"] = [c.raw_data for c in self.pastamaker_commits]
-    return data
-
-
-@property
 def approved(self):
     approved = len(self.approvals[0])
     requested_changes = len(self.approvals[1])
@@ -275,6 +262,19 @@ def pastamaker_merge(self, **post_parameters):
         # to repoduce the issue
 
 
+@property
+def pastamaker_raw_data(self):
+    data = copy.deepcopy(self.raw_data)
+    data["pastamaker_ci_statuses"] = self.pastamaker_ci_statuses
+    data["pastamaker_weight"] = self.pastamaker_weight
+    data["travis_state"] = self.travis_state
+    data["travis_url"] = self.travis_url
+    data["travis_detail"] = self.travis_detail
+    data["approvals"] = self.approvals
+    data["pastamaker_commits"] = [c.raw_data for c in self.pastamaker_commits]
+    return data
+
+
 def from_event(repo, data):
     # TODO(sileht): do it only once in handle()
     # NOTE(sileht): Convert event payload, into pygithub object
@@ -282,6 +282,21 @@ def from_event(repo, data):
     if "pull_request" in data:
         return github.PullRequest.PullRequest(
             repo._requester, {}, data["pull_request"], completed=True)
+
+
+def from_cache(repo, data):
+    # NOTE(sileht): Reload our PullRequest custom object from cache data
+    # instead of querying the API
+    p = github.PullRequest.PullRequest(
+        repo._requester, {}, data, completed=True)
+    p._pastamaker_ci_statuses = data["pastamaker_ci_statuses"]
+    p._pastamaker_weight = data["pastamaker_weight"]
+    p._pastamaker_travis_detail = data["travis_detail"]
+    p._pastamaker_approvals = data["approvals"]
+    p._pastamaker_commits = [
+        github.Commit.Commit(repo._requester, {}, raw_commit, completed=True)
+        for raw_commit in data["pastamaker_commits"]]
+    return p
 
 
 def monkeypatch_github():
@@ -294,9 +309,11 @@ def monkeypatch_github():
     p.approved = approved
     p.approvals = approvals
 
+    p.pastamaker_post_travis_report = travis.post_report
     p.pastamaker_update = pastamaker_update
     p.pastamaker_merge = pastamaker_merge
     p.pastamaker_update_status = pastamaker_update_status
+    p.pastamaker_update_travis = travis.update
 
     p.pastamaker_commits = pastamaker_commits
     p.pastamaker_ci_statuses = pastamaker_ci_statuses
