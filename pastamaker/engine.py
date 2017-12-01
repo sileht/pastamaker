@@ -116,12 +116,14 @@ class PastaMakerEngine(object):
         # Unhandled and already logged
         if event_type not in ["pull_request", "pull_request_review",
                               "status", "refresh"]:
+            LOG.info("No need to proceed queue")
             return
 
         # NOTE(sileht): refresh only travis detail
         if event_type == "status" and data["state"] == "pending":
             self.get_updated_queues_from_cache(current_branch,
                                                incoming_pull)
+            LOG.info("No need to proceed queue")
             return
 
         # NOTE(sileht): We check the state of incoming_pull and the event
@@ -144,6 +146,7 @@ class PastaMakerEngine(object):
         if need_status_update and incoming_pull:
             if not incoming_pull.pastamaker_github_post_check_status():
                 # Status not updated, don't need to update the queue
+                LOG.info("No need to proceed queue")
                 return
 
         # Get and refresh the queues
