@@ -31,14 +31,16 @@ def pretty(self):
         weight = (self.pastamaker["weight"]
                   if self.pastamaker["weight"] >= 0
                   else "NA")
+        synced = self.pastamaker["rebase_state"]
     else:
-        travis_state = approvals = weight = "not-yet-computed"
-    return "%s/%s/pull/%s@%s (%s/%s/%s/%s)" % (
+        travis_state = approvals = weight = synced = "not-yet-computed"
+    return "%s/%s/pull/%s@%s (%s/%s/%s/%s/%s)" % (
         self.base.user.login,
         self.base.repo.name,
         self.number,
         self.base.ref,
         "merged" if self.is_merged() else (self.mergeable_state or "none"),
+        synced,
         travis_state,
         approvals,
         weight
@@ -154,6 +156,7 @@ def from_cache(repo, data):
             for raw_commit in data["pastamaker_commits"]
         ],
         "ci_statuses": data["pastamaker_ci_statuses"],
+        "rebase_state": data["pastamaker_rebase_state"],
         "raw_data": data,
 
         # FIXME(sileht): Need pastamaker prefix
@@ -179,7 +182,6 @@ def monkeypatch_github():
 
     # Missing Github API
     p.pastamaker_update_branch = webhack.web_github_update_branch
-    p.pastamaker_branch_synced_state = webhack.web_github_branch_status
 
     # FIXME(sileht): remove me, used by engine for sorting pulls
     p.pastamaker_weight = property(lambda p: p.pastamaker["weight"])

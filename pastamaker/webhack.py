@@ -78,7 +78,6 @@ def _web_github_branch_status(text):
         return "unknown"
 
 
-@property
 def web_github_branch_status(p):
     s, text = web_github_get_merge_button_page(p)
     return _web_github_branch_status(text)

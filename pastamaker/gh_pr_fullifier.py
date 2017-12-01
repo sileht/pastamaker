@@ -22,6 +22,7 @@ import requests
 import six.moves
 
 from pastamaker import config
+from pastamaker import webhack
 
 LOG = logging.getLogger(__name__)
 TRAVIS_BASE_URL = 'https://api.travis-ci.org'
@@ -154,19 +155,20 @@ def compute_weight(pull):
         weight = -1
     elif (pull.mergeable_state in ["clean", "unstable"]
           and pull.pastamaker["travis_state"] == "success"
-          and pull.pastamaker_branch_synced_state == "clean"):
+          and pull.pastamaker["rebase_state"] == "clean"):
         # Best PR ever, up2date and CI OK
         weight = 11
     elif pull.mergeable_state in ["clean", "unstable"]:
         weight = 10
     elif (pull.mergeable_state == "blocked"
           and pull.pastamaker["travis_state"] == "pending"
-          and pull.pastamaker_branch_synced_state == "clean"):
+          and pull.pastamaker["rebase_state"] == "clean"):
         # Maybe clean soon, or maybe this is the previous run
         # selected PR that we just rebase
         weight = 10
     elif (pull.mergeable_state == "behind"
-          and pull.pastamaker_branch_synced_state not in ["unknown", "dirty"]):
+          and pull.pastamaker["rebase_state"]
+            not in ["unknown", "dirty"]):
         # Not up2date, but ready to merge, is branch updatable
         if pull.pastamaker["travis_state"] == "success":
             weight = 7
@@ -181,7 +183,7 @@ def compute_weight(pull):
     # LOG.info("%s prio: %s, %s, %s, %s, %s", pull.pretty(), weight,
     #          pull.pastamaker["approved"], pull.mergeable_state,
     #          pull.pastamaker["travis_state"],
-    #          pull.pastamaker_branch_synced_state)
+    #          pull.pastamaker["rebase_state"])
     return weight
 
 
@@ -189,19 +191,24 @@ def compute_raw_data(pull):
     data = copy.deepcopy(pull.raw_data)
     data["pastamaker_ci_statuses"] = pull.pastamaker["ci_statuses"]
     data["pastamaker_weight"] = pull.pastamaker["weight"]
+    data["pastamaker_rebase_state"] = \
+        pull.pastamaker["rebase_state"]
+    data["pastamaker_commits"] = [c.raw_data for c in
+                                  pull.pastamaker["commits"]]
+
+    # FIXME(sileht): Prefix me by pastamaker
     data["travis_state"] = pull.pastamaker["travis_state"]
     data["travis_url"] = pull.pastamaker["travis_url"]
     data["travis_detail"] = pull.pastamaker["travis_detail"]
     data["approvals"] = pull.pastamaker["approvals"]
     data["approved"] = pull.pastamaker["approved"]
-    data["pastamaker_commits"] = [c.raw_data for c in
-                                  pull.pastamaker["commits"]]
     return data
 
 
 # Order matter, some method need result of some other
 FULLIFIER = [
     ("commits", lambda p: list(p.get_commits())),
+    ("rebase_state", webhack.web_github_branch_status),
     ("approvals", compute_approvals),
     ("approved", compute_approved),            # Need approvals
     ("ci_statuses", compute_ci_statuses),      # Need approvals
