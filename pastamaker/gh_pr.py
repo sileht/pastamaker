@@ -88,7 +88,7 @@ def pastamaker_travis_post_build_results(self):
     message = ["Tests %s for HEAD %s\n" % (
         self.pastamaker["travis_state"].upper(),
         self.head.sha)]
-    for job in self.travis_detail["jobs"]:
+    for job in self.pastamaker["travis_detail"]["jobs"]:
         message.append('- [%s](%s): %s' % (
             job["config"]["env"],
             job["log_url"],
