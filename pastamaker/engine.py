@@ -184,11 +184,14 @@ class PastaMakerEngine(object):
         """
 
         p = queues[0]
+        LOG.info("%s selected", p.pretty())
 
         if p.mergeable_state == "clean":
             if p.pastamaker_merge():
-                LOG.info("%s merged", p.pretty())
                 # Wait for the closed event now
+                LOG.info("%s -> merged", p.pretty())
+            else:
+                LOG.info("%s -> merge fail", p.pretty())
 
         elif p.mergeable_state == "behind":
             commit = self._r.get_commit(p.head.sha)
@@ -197,7 +200,15 @@ class PastaMakerEngine(object):
                 # rebase it and wait the next pull_request event
                 # (synchronize)
                 if p.pastamaker_update_branch():
-                    LOG.info("%s branch updated", p.pretty())
+                    LOG.info("%s -> branch updated", p.pretty())
+                else:
+                    LOG.info("%s -> branch not updatable, "
+                             "manual intervention required", p.pretty())
+            else:
+                LOG.info("%s -> github combined status != success", p.pretty())
+
+        else:
+            LOG.info("%s -> mergeable_state != clean/behind", p.pretty())
 
     def set_cache_queues(self, branch, raw_pulls):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
