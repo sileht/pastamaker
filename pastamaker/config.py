@@ -39,7 +39,7 @@ for name, config_value in CONFIG.items():
     if (name in ["PRIVATE_KEY", "WEBHOOK_SECRET", "WEBHACK_PASSWORD"]
             and value is not None):
         value = "*****"
-    cfg_msg += "* %s: %s\n" % (name, value)
+    cfg_msg += "* PASTAMAKER_%s: %s\n" % (name, value)
 
 print("""
 ##################### CONFIGURATION ######################
