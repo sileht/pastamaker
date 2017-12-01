@@ -182,4 +182,4 @@ def monkeypatch_github():
     p.pastamaker_branch_synced_state = webhack.web_github_branch_status
 
     # FIXME(sileht): remove me, used by engine for sorting pulls
-    p.pastamaker_weight = lambda p: p.pastamaker["weight"]
+    p.pastamaker_weight = property(lambda p: p.pastamaker["weight"])
