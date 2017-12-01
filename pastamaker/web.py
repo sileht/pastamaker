@@ -104,7 +104,7 @@ def refresh_all():
                 get_queue().enqueue(worker.event_handler, "refresh", {
                     'repository': repo.raw_data,
                     'installation': {'id': install['id']},
-                    'branch': branch,
+                    'refresh_ref': "branch/%s" % branch,
                 })
     return ("Updated %s installations, %s repositories, "
             "%s branches" % tuple(counts)), 202

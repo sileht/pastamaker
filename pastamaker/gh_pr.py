@@ -14,80 +14,41 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import copy
 import logging
-import time
 
 import github
-import six.moves
 
-from pastamaker import config
-# from pastamaker import gh_commit
-from pastamaker import travis
+from pastamaker import gh_pr_fullifier
 from pastamaker import webhack
 
 LOG = logging.getLogger(__name__)
 
 
 def pretty(self):
+    if self.pastamaker["fullified"]:
+        travis_state = self.pastamaker["travis_state"]
+        approvals = len(self.pastamaker["approvals"][0])
+        weight = (self.pastamaker["weight"]
+                  if self.pastamaker["weight"] >= 0
+                  else "NA")
+    else:
+        travis_state = approvals = weight = "not-yet-computed"
     return "%s/%s/pull/%s@%s (%s/%s/%s/%s)" % (
         self.base.user.login,
         self.base.repo.name,
         self.number,
         self.base.ref,
-        self.mergeable_state or "none",
-        self.travis_state,
-        len(self.approvals[0]),
-        self.pastamaker_weight if self.pastamaker_weight >= 0 else "NA",
+        "merged" if self.is_merged() else (self.mergeable_state or "none"),
+        travis_state,
+        approvals,
+        weight
     )
 
 
-@property
-def approvals(self):
-    if not hasattr(self, "_pastamaker_approvals"):
-        allowed = [u.id for u in self.base.repo.get_collaborators()]
-
-        users_info = {}
-        reviews_ok = set()
-        reviews_ko = set()
-        for review in self.get_reviews():
-            if review.user.id not in allowed:
-                continue
-
-            users_info[review.user.login] = review.user.raw_data
-            if review.state == 'APPROVED':
-                reviews_ok.add(review.user.login)
-                if review.user.login in reviews_ko:
-                    reviews_ko.remove(review.user.login)
-
-            elif review.state in ["DISMISSED", "CHANGES_REQUESTED"]:
-                if review.user.login in reviews_ok:
-                    reviews_ok.remove(review.user.login)
-                if review.user.login in reviews_ko:
-                    reviews_ko.remove(review.user.login)
-                if review.state == "CHANGES_REQUESTED":
-                    reviews_ko.add(review.user.login)
-            elif review.state == 'COMMENTED':
-                pass
-            else:
-                LOG.error("%s FIXME review state unhandled: %s",
-                          self.pretty(), review.state)
-
-        required = config.get_value_from(config.REQUIRED_APPROVALS,
-                                         self.base.repo.full_name,
-                                         self.base.ref, 2)
-        # FIXME(sileht): Compute the thing on JS side
-        remaining = list(six.moves.range(max(0, required - len(reviews_ok))))
-        self._pastamaker_approvals = ([users_info[u] for u in reviews_ok],
-                                      [users_info[u] for u in reviews_ko],
-                                      required, remaining)
-    return self._pastamaker_approvals
-
-
-def pastamaker_update_status(self):
-    approved = len(self.approvals[0])
-    requested_changes = len(self.approvals[1])
-    required = self.approvals[2]
+def pastamaker_github_post_check_status(self):
+    approved = len(self.pastamaker["approvals"][0])
+    requested_changes = len(self.pastamaker["approvals"][1])
+    required = self.pastamaker["approvals"][2]
     if requested_changes != 0:
         state = "failure"
         description = "%s changes requested" % requested_changes
@@ -123,111 +84,19 @@ def pastamaker_update_status(self):
     return need_update
 
 
-@property
-def pastamaker_ci_statuses(self):
-    if not hasattr(self, "_pastamaker_ci_statuses"):
-        commit = self.base.repo.get_commit(self.head.sha)
-        statuses = {}
-        # NOTE(sileht): Statuses are returned in reverse chronological order.
-        # The first status in the list will be the latest one.
-        for s in reversed(list(commit.get_statuses())):
-            statuses[s.context] = {"state": s.state, "url": s.target_url}
-        self._pastamaker_ci_statuses = statuses
-    return self._pastamaker_ci_statuses
-
-
-@property
-def approved(self):
-    approved = len(self.approvals[0])
-    requested_changes = len(self.approvals[1])
-    required = self.approvals[2]
-    if requested_changes != 0:
-        return False
-    else:
-        return approved >= required
-
-
-@property
-def travis_state(self):
-    return self.pastamaker_ci_statuses.get(
-        "continuous-integration/travis-ci/pr", {"state": "unknown"}
-    )["state"]
-
-
-@property
-def travis_url(self):
-    return self.pastamaker_ci_statuses.get(
-        "continuous-integration/travis-ci/pr", {"url": "#"}
-    )["url"]
-
-
-@property
-def pastamaker_weight(self):
-    if not hasattr(self, "_pastamaker_weight"):
-        if not self.approved:
-            weight = -1
-        elif (self.mergeable_state == "clean"
-              and self.travis_state == "success"
-              and self.update_branch_state == "clean"):
-            # Best PR ever, up2date and CI OK
-            weight = 11
-        elif self.mergeable_state == "clean":
-            weight = 10
-        elif (self.mergeable_state == "blocked"
-              and self.travis_state == "pending"
-              and self.update_branch_state == "clean"):
-            # Maybe clean soon, or maybe this is the previous run
-            # selected PR that we just rebase
-            weight = 10
-        elif (self.mergeable_state == "behind"
-              and self.update_branch_state not in ["unknown", "dirty"]):
-            # Not up2date, but ready to merge, is branch updatable
-            if self.travis_state == "success":
-                weight = 7
-            elif self.travis_state == "pending":
-                weight = 5
-            else:
-                weight = -1
-        else:
-            weight = -1
-        if weight >= 0 and self.milestone is not None:
-            weight += 1
-        self._pastamaker_weight = weight
-        # LOG.info("%s prio: %s, %s, %s, %s, %s", self.pretty(), weight,
-        #          self.approved, self.mergeable_state, self.travis_state,
-        #          self.update_branch_state)
-    return self._pastamaker_weight
-
-
-def pastamaker_update(self, force=False):
-    for attr in ["_pastamaker_commits",
-                 "_pastamaker_weight",
-                 "_pastamaker_ci_statuses",
-                 "_pastamaker_travis_detail",
-                 "_pastamaker_approvals"]:
-        if hasattr(self, attr):
-            delattr(self, attr)
-
-    if not force and self.mergeable_state not in ["unknown", None]:
-        return self
-
-    # Github is currently processing this PR, we wait the completion
-    while True:
-        LOG.debug("%s, refreshing...", self.pretty())
-        self.update()
-        if self.mergeable_state not in ["unknown", None]:
-            break
-        time.sleep(0.042)  # you known, this one always work
-
-    LOG.debug("%s, refreshed", self.pretty())
-    return self
-
-
-@property
-def pastamaker_commits(self):
-    if not hasattr(self, "_pastamaker_commits"):
-        self._pastamaker_commits = list(self.get_commits())
-    return self._pastamaker_commits
+def pastamaker_travis_post_build_results(self):
+    message = ["Tests %s for HEAD %s\n" % (
+        self.travis_state.upper(),
+        self.head.sha)]
+    for job in self.travis_detail["jobs"]:
+        message.append('- [%s](%s): %s' % (
+            job["config"]["env"],
+            job["log_url"],
+            job["state"].upper()
+        ))
+    message = "\n".join(message)
+    LOG.debug("%s POST comment: %s" % (self.pretty(), message))
+    self.create_issue_comment(message)
 
 
 def pastamaker_merge(self, **post_parameters):
@@ -262,19 +131,6 @@ def pastamaker_merge(self, **post_parameters):
         # to repoduce the issue
 
 
-@property
-def pastamaker_raw_data(self):
-    data = copy.deepcopy(self.raw_data)
-    data["pastamaker_ci_statuses"] = self.pastamaker_ci_statuses
-    data["pastamaker_weight"] = self.pastamaker_weight
-    data["travis_state"] = self.travis_state
-    data["travis_url"] = self.travis_url
-    data["travis_detail"] = self.travis_detail
-    data["approvals"] = self.approvals
-    data["pastamaker_commits"] = [c.raw_data for c in self.pastamaker_commits]
-    return data
-
-
 def from_event(repo, data):
     # TODO(sileht): do it only once in handle()
     # NOTE(sileht): Convert event payload, into pygithub object
@@ -289,13 +145,24 @@ def from_cache(repo, data):
     # instead of querying the API
     p = github.PullRequest.PullRequest(
         repo._requester, {}, data, completed=True)
-    p._pastamaker_ci_statuses = data["pastamaker_ci_statuses"]
-    p._pastamaker_weight = data["pastamaker_weight"]
-    p._pastamaker_travis_detail = data["travis_detail"]
-    p._pastamaker_approvals = data["approvals"]
-    p._pastamaker_commits = [
-        github.Commit.Commit(repo._requester, {}, raw_commit, completed=True)
-        for raw_commit in data["pastamaker_commits"]]
+    p.pastamaker = {
+        "fullified": True,
+        "weight": data["pastamaker_weight"],
+        "commits": [
+            github.Commit.Commit(repo._requester, {}, raw_commit,
+                                 completed=True)
+            for raw_commit in data["pastamaker_commits"]
+        ],
+        "ci_statuses": data["pastamaker_ci_statuses"],
+        "raw_data": data,
+
+        # FIXME(sileht): Need pastamaker prefix
+        "travis_detail": data["travis_detail"],
+        "approvals": data["approvals"],
+        "travis_url": data["travis_url"],
+        "travis_state": data["travis_state"],
+        "approved": data["approved"],
+    }
     return p
 
 
@@ -303,23 +170,16 @@ def monkeypatch_github():
     p = github.PullRequest.PullRequest
 
     p.pretty = pretty
-    p.travis_state = travis_state
-    p.travis_url = travis_url
-    p.travis_detail = travis.detail
-    p.approved = approved
-    p.approvals = approvals
+    p.fullify = gh_pr_fullifier.fullify
 
-    p.pastamaker_post_travis_report = travis.post_report
-    p.pastamaker_update = pastamaker_update
     p.pastamaker_merge = pastamaker_merge
-    p.pastamaker_update_status = pastamaker_update_status
-    p.pastamaker_update_travis = travis.update
-
-    p.pastamaker_commits = pastamaker_commits
-    p.pastamaker_ci_statuses = pastamaker_ci_statuses
-    p.pastamaker_weight = pastamaker_weight
-    p.pastamaker_raw_data = pastamaker_raw_data
+    p.pastamaker_github_post_check_status = pastamaker_github_post_check_status
+    p.pastamaker_travis_post_build_results = \
+        pastamaker_travis_post_build_results
 
     # Missing Github API
-    p.update_branch = webhack.web_github_update_branch
-    p.update_branch_state = webhack.web_github_branch_status
+    p.pastamaker_update_branch = webhack.web_github_update_branch
+    p.pastamaker_branch_synced_state = webhack.web_github_branch_status
+
+    # FIXME(sileht): remove me, used by engine for sorting pulls
+    p.pastamaker_weight = lambda p: p.pastamaker["weight"]

@@ -95,6 +95,10 @@ class PastaMakerEngine(object):
                   data["refresh_ref"].startswith("pull/")):
                 incoming_pull = self._r.get_pull(int(data["refresh_ref"][5:]))
 
+        # Gather missing github/travis information and compute weight
+        if incoming_pull:
+            incoming_pull = incoming_pull.fullify()
+
         # Get the current branch
         current_branch = None
         if incoming_pull:
@@ -116,7 +120,6 @@ class PastaMakerEngine(object):
 
         # NOTE(sileht): refresh only travis detail
         if event_type == "status" and data["state"] == "pending":
-            incoming_pull.pastamaker_update_travis(force=True)
             self.get_updated_queues_from_cache(current_branch,
                                                incoming_pull)
             return
@@ -129,8 +132,8 @@ class PastaMakerEngine(object):
                 and data["state"] in ending_states
                 and data["context"] in ["continuous-integration/travis-ci",
                                         "continuous-integration/travis-ci/pr"]
-                and incoming_pull.travis_state in ending_states
-                and incoming_pull.travis_detail):
+                and incoming_pull.pastamaker["travis_state"] in ending_states
+                and incoming_pull.pastamaker["travis_detail"]):
             incoming_pull.pastamaker_post_travis_report()
 
         # NOTE(sileht): PullRequest updated or comment posted, maybe we need to
@@ -139,7 +142,7 @@ class PastaMakerEngine(object):
                                and data["action"] in ["opened", "synchronize"])
                               or event_type == "pull_request_review")
         if need_status_update and incoming_pull:
-            if not incoming_pull.pastamaker_update_status():
+            if not incoming_pull.pastamaker_github_post_check_status():
                 # Status not updated, don't need to update the queue
                 return
 
@@ -148,16 +151,13 @@ class PastaMakerEngine(object):
             queues = self.get_updated_queues_from_github(current_branch)
             if event_type == "refresh":
                 for p in queues:
-                    p.pastamaker_update_status()
+                    p.pastamaker_github_post_check_status()
             else:
                 LOG.warning("FIXME: We got a event without incoming_pull:"
                             "%s : %s" % (event_type, data))
         else:
             if event_type == "refresh":
-                incoming_pull.pastamaker_update(force=True)
-                incoming_pull.pastamaker_update_travis(force=True)
-                incoming_pull.pastamaker_update_status()
-
+                incoming_pull.pastamaker_github_post_check_status()
             queues = self.get_updated_queues_from_cache(current_branch,
                                                         incoming_pull)
 
@@ -196,7 +196,7 @@ class PastaMakerEngine(object):
             if status.state == "success":
                 # rebase it and wait the next pull_request event
                 # (synchronize)
-                if p.update_branch():
+                if p.pastamaker_update_branch():
                     LOG.info("%s branch updated", p.pretty())
 
     def set_cache_queues(self, branch, raw_pulls):
@@ -219,7 +219,9 @@ class PastaMakerEngine(object):
                 pull = incoming_pull
                 found = True
             pulls[i] = pull
-        if not found:
+        if incoming_pull.is_merged():
+            pulls.remove(incoming_pull)
+        elif not found:
             pulls.append(incoming_pull)
         return self.sort_save_and_log_queues(branch, pulls)
 
@@ -227,7 +229,7 @@ class PastaMakerEngine(object):
         LOG.info("%s, retrieving pull requests",
                  self._get_logprefix(branch))
         pulls = self._r.get_pulls(sort="created", direction="asc", base=branch)
-        pulls = six.moves.map(lambda p: p.pastamaker_update(), pulls)
+        pulls = six.moves.map(lambda p: p.fullify(), pulls)
         return self.sort_save_and_log_queues(branch, pulls)
 
     def sort_save_and_log_queues(self, branch, pulls):
@@ -237,6 +239,6 @@ class PastaMakerEngine(object):
             LOG.info("%s, sha: %s->%s)", p.pretty(), p.base.sha, p.head.sha)
         LOG.info("%s, %s pull request(s) found" % (self._get_logprefix(branch),
                                                    len(pulls)))
-        raw_queues = [p.pastamaker_raw_data for p in pulls]
+        raw_queues = [p.pastamaker["raw_data"] for p in pulls]
         self.set_cache_queues(branch, raw_queues)
         return pulls
