@@ -56,16 +56,15 @@ def auth():
     return "pastamaker don't need oauth setup"
 
 
-@app.route("/refresh/<owner>/<repo>/<path:branch>",
+@app.route("/refresh/<owner>/<repo>/<path:refresh_ref>",
            methods=["POST"])
-def refresh(owner, repo, branch):
+def refresh(owner, repo, refresh_ref):
     integration = github.GithubIntegration(config.INTEGRATION_ID,
                                            config.PRIVATE_KEY)
 
     installation_id = utils.get_installation_id(integration, owner)
     if not installation_id:
         flask.abort(404, "%s have not installed pastamaker" % owner)
-
     # Mimic the github event format
     data = {
         'repository': {
@@ -74,7 +73,7 @@ def refresh(owner, repo, branch):
             'owner': {'login': owner},
         },
         'installation': {'id': installation_id},
-        "branch": branch,
+        "refresh_ref": refresh_ref,
     }
     get_queue().enqueue(worker.event_handler, "refresh", data)
     return "", 202

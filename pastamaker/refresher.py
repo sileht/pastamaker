@@ -45,7 +45,7 @@ def main():
     )
     parser.add_argument(
         "slug", nargs="*",
-        help="<owner>/<repo>/<branch>")
+        help="<owner>/<repo>/branch/<branch> or <owner>/<repo>/pull/<pull#>")
 
     args = parser.parse_args()
 

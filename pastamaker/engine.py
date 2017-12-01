@@ -58,7 +58,10 @@ class PastaMakerEngine(object):
             extra = ", ci-status: %s, sha: %s" % (data["state"], data["sha"])
 
         elif event_type == "refresh":
-            p_info = self._get_logprefix(data["branch"])
+            if incoming_pull:
+                p_info = incoming_pull.pretty()
+            else:
+                p_info = self._get_logprefix(data["refresh_ref"])
             extra = ""
         else:
             if incoming_pull:
@@ -79,27 +82,35 @@ class PastaMakerEngine(object):
             elif data["context"] == "continuous-integration/travis-ci/push":
                 return
 
+        # Get the current pull request
         incoming_pull = gh_pr.from_event(self._r, data)
-        if not incoming_pull and event_type == "status":
-            issues = list(self._g.search_issues("is:pr %s" % data["sha"]))
-            if len(issues) >= 1:
-                incoming_pull = self._r.get_pull(issues[0].number)
+        if not incoming_pull:
+            if event_type == "status":
+                issues = list(self._g.search_issues("is:pr %s" % data["sha"]))
+                if len(issues) >= 1:
+                    incoming_pull = self._r.get_pull(issues[0].number)
 
-        self.log_formated_event(event_type, incoming_pull, data)
-
-        if event_type not in ["pull_request", "pull_request_review",
-                              "status", "refresh"]:
-            # Unhandled and already logged
-            return
+            elif (event_type == "refresh" and
+                  data["refresh_ref"].startswith("pull/")):
+                incoming_pull = self._r.get_pull(int(data["refresh_ref"][5:]))
 
         # Get the current branch
         current_branch = None
         if incoming_pull:
             current_branch = incoming_pull.base.ref
-        elif event_type == "refresh":
-            current_branch = data["branch"]
+        elif (event_type == "refresh" and
+              data["refresh_ref"].startswith("branch/")):
+            current_branch = data["refresh_ref"][7:]
         else:
-            LOG.info("No pull request found in the event, ignoring")
+            LOG.info("No pull request or branch found in the event, ignoring")
+            return
+
+        # Log the event
+        self.log_formated_event(event_type, incoming_pull, data)
+
+        # Unhandled and already logged
+        if event_type not in ["pull_request", "pull_request_review",
+                              "status", "refresh"]:
             return
 
         # NOTE(sileht): refresh only travis detail
@@ -131,14 +142,25 @@ class PastaMakerEngine(object):
                 # Status not updated, don't need to update the queue
                 return
 
-        if event_type == "refresh":
+        # Get and refresh the queues
+        if not incoming_pull:
             queues = self.get_updated_queues_from_github(current_branch)
-            for p in queues:
-                p.pastamaker_update_status()
+            if event_type == "refresh":
+                for p in queues:
+                    p.pastamaker_update_status()
+            else:
+                LOG.warning("FIXME: We got a event without incoming_pull:"
+                            "%s : %s" % (event_type, data))
         else:
+            if event_type == "refresh":
+                incoming_pull.pastamaker_update(force=True)
+                incoming_pull.pastamaker_update_travis(force=True)
+                incoming_pull.pastamaker_update_status()
+
             queues = self.get_updated_queues_from_cache(current_branch,
                                                         incoming_pull)
 
+        # Proceed the queue
         if queues:
             # protect the branch before doing anything
             try:
