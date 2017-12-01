@@ -134,7 +134,7 @@ class PastaMakerEngine(object):
                                         "continuous-integration/travis-ci/pr"]
                 and incoming_pull.pastamaker["travis_state"] in ending_states
                 and incoming_pull.pastamaker["travis_detail"]):
-            incoming_pull.pastamaker_post_travis_report()
+            incoming_pull.pastamaker_travis_post_build_results()
 
         # NOTE(sileht): PullRequest updated or comment posted, maybe we need to
         # update github
