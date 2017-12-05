@@ -40,7 +40,7 @@ def get_web_session():
                   'type="hidden" value="([^"]*)" />', r.text)
     token = m.group(1)
     r = s.post("https://github.com/session",
-               data={"commit": "Sign in",
+               data={"commit": "Sign+in",
                      "utf8": "✓",
                      "authenticity_token": token,
                      "login": config.WEBHACK_USERNAME,

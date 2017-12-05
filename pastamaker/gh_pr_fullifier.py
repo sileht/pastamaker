@@ -18,11 +18,11 @@ import copy
 import logging
 import time
 
+import github
 import requests
 import six.moves
 
 from pastamaker import config
-from pastamaker import webhack
 
 LOG = logging.getLogger(__name__)
 TRAVIS_BASE_URL = 'https://api.travis-ci.org'
@@ -155,20 +155,19 @@ def compute_weight(pull):
         weight = -1
     elif (pull.mergeable_state in ["clean", "unstable"]
           and pull.pastamaker["travis_state"] == "success"
-          and pull.pastamaker["rebase_state"] == "clean"):
+          and pull.pastamaker["sync_with_master"]):
         # Best PR ever, up2date and CI OK
         weight = 11
     elif pull.mergeable_state in ["clean", "unstable"]:
         weight = 10
     elif (pull.mergeable_state == "blocked"
-          and pull.pastamaker["travis_state"] == "pending"
-          and pull.pastamaker["rebase_state"] == "clean"):
+          and pull.pastamaker["sync_with_master"]
+          and pull.pastamaker["travis_state"] == "pending"):
         # Maybe clean soon, or maybe this is the previous run
         # selected PR that we just rebase
         weight = 10
     elif (pull.mergeable_state == "behind"
-          and pull.pastamaker["rebase_state"]
-            not in ["unknown", "dirty"]):
+          and pull.pastamaker["sync_with_master"]):
         # Not up2date, but ready to merge, is branch updatable
         if pull.pastamaker["travis_state"] == "success":
             weight = 7
@@ -183,16 +182,21 @@ def compute_weight(pull):
     # LOG.info("%s prio: %s, %s, %s, %s, %s", pull.pretty(), weight,
     #          pull.pastamaker["approved"], pull.mergeable_state,
     #          pull.pastamaker["travis_state"],
-    #          pull.pastamaker["rebase_state"])
+    #          pull.pastamaker["sync_with_master"])
     return weight
+
+
+def compute_sync_with_mater(pull):
+    branch = pull.base.repo.get_branch(pull.base.ref)
+    return pull.base.sha == branch.commit.sha
 
 
 def compute_raw_data(pull):
     data = copy.deepcopy(pull.raw_data)
     data["pastamaker_ci_statuses"] = pull.pastamaker["ci_statuses"]
     data["pastamaker_weight"] = pull.pastamaker["weight"]
-    data["pastamaker_rebase_state"] = \
-        pull.pastamaker["rebase_state"]
+    data["pastamaker_sync_with_master"] = \
+        pull.pastamaker["sync_with_master"]
     data["pastamaker_commits"] = [c.raw_data for c in
                                   pull.pastamaker["commits"]]
 
@@ -205,10 +209,16 @@ def compute_raw_data(pull):
     return data
 
 
+def cache_hook_commits(pull, cache):
+    return [github.Commit.Commit(pull.base.repo._requester, {}, raw_commit,
+                                 completed=True)
+            for raw_commit in cache]
+
+
 # Order matter, some method need result of some other
 FULLIFIER = [
     ("commits", lambda p: list(p.get_commits())),
-    ("rebase_state", webhack.web_github_branch_status),
+    ("sync_with_master", compute_sync_with_mater),
     ("approvals", compute_approvals),
     ("approved", compute_approved),            # Need approvals
     ("ci_statuses", compute_ci_statuses),      # Need approvals
@@ -219,16 +229,30 @@ FULLIFIER = [
     ("raw_data", compute_raw_data),            # Need everything
 ]
 
+CACHE_HOOK = {
+    "commits": cache_hook_commits,
+}
 
-def fullify(pull, force=False):
+
+def fullify(pull, cache=None):
     if not hasattr(pull, "pastamaker"):
         pull.pastamaker = {"fullified": False}
 
     pull = ensure_mergable_state(pull)
 
     for key, method in FULLIFIER:
-        if force or key not in pull.pastamaker:
-            pull.pastamaker[key] = method(pull)
+        if key not in pull.pastamaker:
+            if cache and "pastamaker_%s" % key in cache:
+                value = cache["pastamaker_%s" % key]
+                if key in CACHE_HOOK:
+                    value = CACHE_HOOK[key](pull, value)
+            elif cache and key in cache:
+                value = cache[key]
+                if key in CACHE_HOOK:
+                    value = CACHE_HOOK[key](pull, value)
+            else:
+                value = method(pull)
+            pull.pastamaker[key] = value
 
     pull.pastamaker["fullified"] = True
     return pull

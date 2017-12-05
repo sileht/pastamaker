@@ -31,7 +31,7 @@ def pretty(self):
         weight = (self.pastamaker["weight"]
                   if self.pastamaker["weight"] >= 0
                   else "NA")
-        synced = self.pastamaker["rebase_state"]
+        synced = self.pastamaker["sync_with_master"]
     else:
         travis_state = approvals = weight = synced = "not-yet-computed"
     return "%s/%s/pull/%s@%s (%s/%s/%s/%s/%s)" % (
@@ -147,26 +147,7 @@ def from_cache(repo, data):
     # instead of querying the API
     p = github.PullRequest.PullRequest(
         repo._requester, {}, data, completed=True)
-    p.pastamaker = {
-        "fullified": True,
-        "weight": data["pastamaker_weight"],
-        "commits": [
-            github.Commit.Commit(repo._requester, {}, raw_commit,
-                                 completed=True)
-            for raw_commit in data["pastamaker_commits"]
-        ],
-        "ci_statuses": data["pastamaker_ci_statuses"],
-        "rebase_state": data["pastamaker_rebase_state"],
-        "raw_data": data,
-
-        # FIXME(sileht): Need pastamaker prefix
-        "travis_detail": data["travis_detail"],
-        "approvals": data["approvals"],
-        "travis_url": data["travis_url"],
-        "travis_state": data["travis_state"],
-        "approved": data["approved"],
-    }
-    return p
+    return gh_pr_fullifier.fullify(p, data)
 
 
 def monkeypatch_github():
