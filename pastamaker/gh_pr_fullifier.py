@@ -250,6 +250,11 @@ def fullify(pull, cache=None):
                 value = cache[key]
                 if key in CACHE_HOOK:
                     value = CACHE_HOOK[key](pull, value)
+            elif cache and key == "raw_data":
+                value = copy.copy(cache)
+                for k, m in FULLIFIER:
+                    value.pop(k, None)
+                    value.pop("pastamaker_%s" % k, None)
             else:
                 LOG.info("%s, begin computing %s" % (pull.pretty(), key))
                 value = method(pull)
