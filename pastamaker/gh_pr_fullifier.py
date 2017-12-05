@@ -191,26 +191,14 @@ def compute_sync_with_mater(pull):
     return pull.base.sha == branch.commit.sha
 
 
-def compute_raw_data(pull):
-    data = copy.copy(pull.raw_data)
-    data["pastamaker_ci_statuses"] = pull.pastamaker["ci_statuses"]
-    data["pastamaker_weight"] = pull.pastamaker["weight"]
-    data["pastamaker_sync_with_master"] = \
-        pull.pastamaker["sync_with_master"]
-    data["pastamaker_commits"] = [c.raw_data for c in
-                                  pull.pastamaker["commits"]]
-    data["pastamaker_travis_state"] = pull.pastamaker["travis_state"]
-    data["pastamaker_travis_url"] = pull.pastamaker["travis_url"]
-    data["pastamaker_travis_detail"] = pull.pastamaker["travis_detail"]
-    data["pastamaker_approvals"] = pull.pastamaker["approvals"]
-    data["pastamaker_approved"] = pull.pastamaker["approved"]
-    return data
-
-
-def cache_hook_commits(pull, cache):
+def cache_hook_commits_from(pull, cache):
     return [github.Commit.Commit(pull.base.repo._requester, {}, raw_commit,
                                  completed=True)
             for raw_commit in cache]
+
+
+def cache_hook_commits_to(value):
+    return [c.raw_data for c in value]
 
 
 # Order matter, some method need result of some other
@@ -224,12 +212,25 @@ FULLIFIER = [
     ("travis_url", compute_travis_url),        # Need ci_statuses
     ("travis_detail", compute_travis_detail),  # Need travis_url
     ("weight", compute_weight),                # Need approved, travis_state
-    ("raw_data", compute_raw_data),            # Need everything
 ]
 
-CACHE_HOOK = {
-    "commits": cache_hook_commits,
+CACHE_HOOK_FROM = {
+    "commits": cache_hook_commits_from
 }
+
+CACHE_HOOK_TO = {
+    "commits": cache_hook_commits_to
+}
+
+
+def jsonify(pull):
+    raw = copy.copy(pull.raw_data)
+    for key, method in FULLIFIER:
+        value = pull.pastamaker[key]
+        if key in CACHE_HOOK_TO:
+            value = CACHE_HOOK_TO[key](value)
+        raw["pastamaker_%s" % key] = value
+    return raw
 
 
 def fullify(pull, cache=None):
@@ -242,15 +243,18 @@ def fullify(pull, cache=None):
         if key not in pull.pastamaker:
             if cache and "pastamaker_%s" % key in cache:
                 value = cache["pastamaker_%s" % key]
-                if key in CACHE_HOOK:
-                    value = CACHE_HOOK[key](pull, value)
-            elif cache and key == "raw_data":
-                value = dict((k, v) for k, v in cache.items()
-                             if not k.startswith("pastamaker_"))
+                if key in CACHE_HOOK_FROM:
+                    value = CACHE_HOOK_FROM[key]["get"](pull, value)
             else:
                 LOG.info("%s, begin computing %s" % (pull.pretty(), key))
                 value = method(pull)
                 LOG.info("%s, end computing %s" % (pull.pretty(), key))
+                if cache:
+                    LOG.warning("%s, %s missing in cache (%s)" % (
+                        pull.pretty(), key,
+                        ", ".join([k for k in cache.keys()
+                                   if k.startswith("pastamaker_")])))
+
             pull.pastamaker[key] = value
 
     pull.pastamaker["fullified"] = True

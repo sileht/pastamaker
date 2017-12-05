@@ -263,6 +263,6 @@ class PastaMakerEngine(object):
             LOG.info("%s, sha: %s->%s)", p.pretty(), p.base.sha, p.head.sha)
         LOG.info("%s, %s pull request(s) found" % (self._get_logprefix(branch),
                                                    len(pulls)))
-        raw_queues = [p.pastamaker["raw_data"] for p in pulls]
+        raw_queues = [p.jsonify() for p in pulls]
         self.set_cache_queues(branch, raw_queues)
         return pulls

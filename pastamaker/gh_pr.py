@@ -155,6 +155,7 @@ def monkeypatch_github():
 
     p.pretty = pretty
     p.fullify = gh_pr_fullifier.fullify
+    p.jsonify = gh_pr_fullifier.jsonify
 
     p.pastamaker_merge = pastamaker_merge
     p.pastamaker_github_post_check_status = pastamaker_github_post_check_status
