@@ -244,11 +244,13 @@ def fullify(pull, cache=None):
             if cache and "pastamaker_%s" % key in cache:
                 value = cache["pastamaker_%s" % key]
                 if key in CACHE_HOOK_FROM:
-                    value = CACHE_HOOK_FROM[key]["get"](pull, value)
+                    value = CACHE_HOOK_FROM[key](pull, value)
             else:
+                start = time.time()
                 LOG.info("%s, begin computing %s" % (pull.pretty(), key))
                 value = method(pull)
-                LOG.info("%s, end computing %s" % (pull.pretty(), key))
+                LOG.info("%s, end computing %s: %s sec" % (
+                    pull.pretty(), key, time.time() - start))
                 if cache:
                     LOG.warning("%s, %s missing in cache (%s)" % (
                         pull.pretty(), key,

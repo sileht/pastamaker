@@ -254,7 +254,7 @@ class PastaMakerEngine(object):
                                  pulls))
 
         if not incoming_pull.is_merged():
-            LOG.info("%s, add #%s to cache (%s)", incoming_pull.pretty(),
+            LOG.info("%s, add #%s to cache", incoming_pull.pretty(),
                      incoming_pull.number)
             pulls.append(incoming_pull)
         return self.sort_save_and_log_queues(branch, pulls)
