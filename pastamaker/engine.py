@@ -248,9 +248,9 @@ class PastaMakerEngine(object):
         return self.sort_save_and_log_queues(branch, pulls)
 
     def get_updated_queues_from_github(self, branch):
-        LOG.info("%s, retrieving pull requests",
-                 self._get_logprefix(branch))
+        LOG.info("%s, retrieving pull requests", self._get_logprefix(branch))
         pulls = self._r.get_pulls(sort="created", direction="asc", base=branch)
+        LOG.info("%s, fullify pull requests", self._get_logprefix(branch))
         pulls = six.moves.map(lambda p: p.fullify(), pulls)
         return self.sort_save_and_log_queues(branch, pulls)
 

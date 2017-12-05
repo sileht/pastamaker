@@ -251,7 +251,9 @@ def fullify(pull, cache=None):
                 if key in CACHE_HOOK:
                     value = CACHE_HOOK[key](pull, value)
             else:
+                LOG.info("%s, begin computing %s" % (pull.pretty(), key))
                 value = method(pull)
+                LOG.info("%s, end computing %s" % (pull.pretty(), key))
             pull.pastamaker[key] = value
 
     pull.pastamaker["fullified"] = True
