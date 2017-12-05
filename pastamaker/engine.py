@@ -97,10 +97,6 @@ class PastaMakerEngine(object):
                   data["refresh_ref"].startswith("pull/")):
                 incoming_pull = self._r.get_pull(int(data["refresh_ref"][5:]))
 
-        # Gather missing github/travis information and compute weight
-        if incoming_pull:
-            incoming_pull = incoming_pull.fullify()
-
         # Get the current branch
         current_branch = None
         if incoming_pull:
@@ -120,6 +116,10 @@ class PastaMakerEngine(object):
                               "status", "refresh"]:
             LOG.info("No need to proceed queue")
             return
+
+        # Gather missing github/travis information and compute weight
+        if incoming_pull:
+            incoming_pull = incoming_pull.fullify()
 
         # NOTE(sileht): refresh only travis detail
         if event_type == "status" and data["state"] == "pending":
@@ -237,12 +237,25 @@ class PastaMakerEngine(object):
         else:
             pulls = []
 
-        pulls = [p for p in pulls if p["number"] != incoming_pull.number]
+        LOG.info("%s, load %d pulls from cache (%s)",
+                 incoming_pull.pretty(),
+                 len(pulls),
+                 [p["number"] for p in pulls])
+
+        pulls = [p for p in pulls if int(p["number"]) != incoming_pull.number]
+
+        LOG.info("%s, convert %d pulls from cache (%s)",
+                 incoming_pull.pretty(),
+                 len(pulls),
+                 [p["number"] for p in pulls])
 
         with futures.ThreadPoolExecutor(max_workers=config.WORKERS) as tpe:
-            pulls = list(tpe.map(lambda p: gh_pr.from_cache(self._r, p)))
+            pulls = list(tpe.map(lambda p: gh_pr.from_cache(self._r, p),
+                                 pulls))
 
         if not incoming_pull.is_merged():
+            LOG.info("%s, add #%s to cache (%s)", incoming_pull.pretty(),
+                     incoming_pull.number)
             pulls.append(incoming_pull)
         return self.sort_save_and_log_queues(branch, pulls)
 
@@ -257,6 +270,7 @@ class PastaMakerEngine(object):
     def sort_save_and_log_queues(self, branch, pulls):
         sort_key = operator.attrgetter('pastamaker_weight', 'updated_at')
         pulls = list(sorted(pulls, key=sort_key, reverse=True))
+        LOG.info("%s, cache content:" % self._get_logprefix(branch))
         for p in pulls:
             LOG.info("%s, sha: %s->%s)", p.pretty(), p.base.sha, p.head.sha)
         LOG.info("%s, %s pull request(s) found" % (self._get_logprefix(branch),
