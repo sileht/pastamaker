@@ -116,3 +116,11 @@ def web_github_update_branch(p):
                      "authenticity_token": token})
     r.raise_for_status()
     return True
+
+
+if __name__ == '__main__':
+    import sys
+    import mock
+    url = sys.argv[1]
+    p = mock.Mock(number=int(url.split("/")[-1]), html_url=url)
+    print(web_github_update_branch(p))
