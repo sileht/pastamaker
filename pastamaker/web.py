@@ -65,17 +65,38 @@ def refresh(owner, repo, refresh_ref):
     installation_id = utils.get_installation_id(integration, owner)
     if not installation_id:
         flask.abort(404, "%s have not installed pastamaker" % owner)
-    # Mimic the github event format
-    data = {
-        'repository': {
-            'name': repo,
-            'full_name': '%s/%s' % (owner, repo),
-            'owner': {'login': owner},
-        },
-        'installation': {'id': installation_id},
-        "refresh_ref": refresh_ref,
-    }
-    get_queue().enqueue(worker.event_handler, "refresh", data)
+
+    if refresh_ref == "full":
+        token = integration.get_access_token(installation_id).token
+        g = github.Github(token)
+        r = g.get_repo("%s/%s" % (owner, repo))
+        pulls = r.get_pulls()
+        branches = set([p.base.ref for p in pulls])
+        for branch in branches:
+            # Mimic the github event format
+            data = {
+                'repository': {
+                    'name': repo,
+                    'full_name': '%s/%s' % (owner, repo),
+                    'owner': {'login': owner},
+                },
+                'installation': {'id': installation_id},
+                "refresh_ref": "branch/%s" % branch,
+            }
+            get_queue().enqueue(worker.event_handler, "refresh", data)
+    else:
+        # Mimic the github event format
+        data = {
+            'repository': {
+                'name': repo,
+                'full_name': '%s/%s' % (owner, repo),
+                'owner': {'login': owner},
+            },
+            'installation': {'id': installation_id},
+            "refresh_ref": refresh_ref,
+        }
+        get_queue().enqueue(worker.event_handler, "refresh", data)
+
     return "", 202
 
 

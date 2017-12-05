@@ -237,7 +237,7 @@ class PastaMakerEngine(object):
         else:
             pulls = []
 
-        pulls = [p for p in pulls if p["number"] == incoming_pull.number]
+        pulls = [p for p in pulls if p["number"] != incoming_pull.number]
 
         with futures.ThreadPoolExecutor(max_workers=config.WORKERS) as tpe:
             pulls = list(tpe.map(lambda p: gh_pr.from_cache(self._r, p)))
