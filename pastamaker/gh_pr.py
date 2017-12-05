@@ -147,7 +147,7 @@ def from_cache(repo, data):
     # instead of querying the API
     p = github.PullRequest.PullRequest(
         repo._requester, {}, data, completed=True)
-    return gh_pr_fullifier.fullify(p, data)
+    return p.fullify(data)
 
 
 def monkeypatch_github():

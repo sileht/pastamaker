@@ -234,13 +234,16 @@ class PastaMakerEngine(object):
         for i, pull in list(enumerate(pulls)):
             pull = gh_pr.from_cache(self._r, pull)
             if pull.number == incoming_pull.number:
+                LOG.info("%s: replaced in cache" % incoming_pull.pretty())
                 pull = incoming_pull
                 found = True
             pulls[i] = pull
         if incoming_pull.is_merged():
             if incoming_pull in pulls:
+                LOG.info("%s: removed from cache" % incoming_pull.pretty())
                 pulls.remove(incoming_pull)
         elif not found:
+            LOG.info("%s: appended to cache" % incoming_pull.pretty())
             pulls.append(incoming_pull)
         return self.sort_save_and_log_queues(branch, pulls)
 
