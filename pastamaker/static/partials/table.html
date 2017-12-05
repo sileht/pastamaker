@@ -56,11 +56,11 @@
              <td class="state">
                  <a href="#" ng-click="toggle_travis_info(pull)">
                     <span ng-if="pull.pastamaker_travis_detail.resume_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
-                    <span ng-if="pull.pastamaker.travis_detail.resume_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
-                    <span ng-if="pull.pastamaker.travis_detail.resume_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
-                    <span ng-if="pull.pastamaker.travis_detail.resume_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
-                    <span ng-if="pull.pastamaker.travis_detail.resume_state == 'working'" title="Latest test pending" class="maybe glyphicon glyphicon-cog"></span>
-                    <span ng-if="pull.pastamaker.travis_detail.resume_state == 'unknown'" title="Latest test unknown" class="maybe glyphicon glyphicon-question-sign"></span>
+                    <span ng-if="pull.pastamaker_travis_detail.resume_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
+                    <span ng-if="pull.pastamaker_travis_detail.resume_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
+                    <span ng-if="pull.pastamaker_travis_detail.resume_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
+                    <span ng-if="pull.pastamaker_travis_detail.resume_state == 'working'" title="Latest test pending" class="maybe glyphicon glyphicon-cog"></span>
+                    <span ng-if="pull.pastamaker_travis_detail.resume_state == 'unknown'" title="Latest test unknown" class="maybe glyphicon glyphicon-question-sign"></span>
                  </a>
              </td>
              <td class="mergeable">
