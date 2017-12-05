@@ -36,15 +36,22 @@ def event_handler(event_type, data):
                                            config.PRIVATE_KEY)
     token = integration.get_access_token(data["installation"]["id"]).token
     g = github.Github(token)
+    rate = g.get_rate_limit().rate
+    LOG.info("ratelimit: %s/%s, reset at %s" % (rate.remaining, rate.limit,
+                                                rate.reset))
 
-    user = g.get_user(data["repository"]["owner"]["login"])
-    repo = user.get_repo(data["repository"]["name"])
+    try:
+        user = g.get_user(data["repository"]["owner"]["login"])
+        repo = user.get_repo(data["repository"]["name"])
 
-    engine.PastaMakerEngine(g, user, repo).handle(event_type, data)
+        engine.PastaMakerEngine(g, user, repo).handle(event_type, data)
+    except github.RateLimitExceededException:
+        LOG.error("rate limit reached")
 
 
 def error_handler(job, *exc_info):
-    LOG.error("event handler failure", exc_info=exc_info)
+    pass
+    # LOG.error("event handler failure", exc_info=exc_info)
 
 
 def main():
