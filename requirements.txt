@@ -12,3 +12,4 @@ ujson
 gevent
 lz4
 mock
+futures

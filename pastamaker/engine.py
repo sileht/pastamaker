@@ -17,9 +17,10 @@
 import logging
 import operator
 
+
+from concurrent import futures
 import github
 import lz4.block
-import six.moves
 import ujson
 
 from pastamaker import gh_branch  # noqa
@@ -251,7 +252,8 @@ class PastaMakerEngine(object):
         LOG.info("%s, retrieving pull requests", self._get_logprefix(branch))
         pulls = self._r.get_pulls(sort="created", direction="asc", base=branch)
         LOG.info("%s, fullify pull requests", self._get_logprefix(branch))
-        pulls = six.moves.map(lambda p: p.fullify(), pulls)
+        with futures.ThreadPoolExecutor() as tpe:
+            list(tpe.map(lambda p: p.fullify(), pulls))
         return self.sort_save_and_log_queues(branch, pulls)
 
     def sort_save_and_log_queues(self, branch, pulls):

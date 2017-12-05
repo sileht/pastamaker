@@ -192,7 +192,7 @@ def compute_sync_with_mater(pull):
 
 
 def compute_raw_data(pull):
-    data = copy.deepcopy(pull.raw_data)
+    data = copy.copy(pull.raw_data)
     data["pastamaker_ci_statuses"] = pull.pastamaker["ci_statuses"]
     data["pastamaker_weight"] = pull.pastamaker["weight"]
     data["pastamaker_sync_with_master"] = \
