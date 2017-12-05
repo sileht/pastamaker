@@ -72,16 +72,16 @@
                <a href="{{ pull.milestone.html_url }}" target="_blank">{{ pull.milestone.title }}</a>
              </td>
              <td class="reviews info">
-                 <a ng-repeat="user in pull.pastamaker.approvals[0]"
+                 <a ng-repeat="user in pull.pastamaker_approvals[0]"
                     href="{{ user.html_url }}"
                     target="_blank"
                     title="{{ user.login }}"><img ng-src="{{ user.avatar_url }}" class="avatar" alt="{{ user.login }}"></a>
-                 <span ng-repeat="n in pull.pastamaker.approvals[3]">
+                 <span ng-repeat="n in pull.pastamaker_approvals[3]">
                      <img class="avatar" style="border:1px dashed white; background-color: #e2f1f9;" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA"/>
                  </span>
              </td>
              <td class="reviews warning">
-                 <a ng-repeat="user in pull.pastamaker.approvals[1]"
+                 <a ng-repeat="user in pull.pastamaker_approvals[1]"
                     href="{{ user.html_url }}"
                     target="_blank"
                     title="{{ user.login }}"><img ng-src="{{ user.avatar_url }}" class="avatar" alt="{{ user.login }}"></a>
