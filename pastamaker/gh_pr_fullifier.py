@@ -199,13 +199,11 @@ def compute_raw_data(pull):
         pull.pastamaker["sync_with_master"]
     data["pastamaker_commits"] = [c.raw_data for c in
                                   pull.pastamaker["commits"]]
-
-    # FIXME(sileht): Prefix me by pastamaker
-    data["travis_state"] = pull.pastamaker["travis_state"]
-    data["travis_url"] = pull.pastamaker["travis_url"]
-    data["travis_detail"] = pull.pastamaker["travis_detail"]
-    data["approvals"] = pull.pastamaker["approvals"]
-    data["approved"] = pull.pastamaker["approved"]
+    data["pastamaker_travis_state"] = pull.pastamaker["travis_state"]
+    data["pastamaker_travis_url"] = pull.pastamaker["travis_url"]
+    data["pastamaker_travis_detail"] = pull.pastamaker["travis_detail"]
+    data["pastamaker_approvals"] = pull.pastamaker["approvals"]
+    data["pastamaker_approved"] = pull.pastamaker["approved"]
     return data
 
 
@@ -246,15 +244,9 @@ def fullify(pull, cache=None):
                 value = cache["pastamaker_%s" % key]
                 if key in CACHE_HOOK:
                     value = CACHE_HOOK[key](pull, value)
-            elif cache and key in cache:
-                value = cache[key]
-                if key in CACHE_HOOK:
-                    value = CACHE_HOOK[key](pull, value)
             elif cache and key == "raw_data":
-                value = copy.copy(cache)
-                for k, m in FULLIFIER:
-                    value.pop(k, None)
-                    value.pop("pastamaker_%s" % k, None)
+                value = dict((k, v) for k, v in cache.items()
+                             if not k.startswith("pastamaker_"))
             else:
                 LOG.info("%s, begin computing %s" % (pull.pretty(), key))
                 value = method(pull)

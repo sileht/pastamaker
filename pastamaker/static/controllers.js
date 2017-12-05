@@ -131,24 +131,24 @@ app.classy.controller({
             }
         },
         refresh_travis: function(pull) {
-            pull.travis_detail = undefined;
-            var build_id = pull.travis_url.split("?")[0].split("/").slice(-1)[0];
+            pull.pastamaker_travis_detail = undefined;
+            var build_id = pull.pastamaker_travis_url.split("?")[0].split("/").slice(-1)[0];
             var v2_headers = { "Accept": "application/vnd.travis-ci.2+json" };
             var travis_base_url = 'https://api.travis-ci.org'
             this.$http.get(travis_base_url + "/builds/" + build_id,
                            {headers: v2_headers}
             ).success(function(data, status, headers) {
-                pull.travis_detail = data.build;
-                pull.travis_detail.resume_state = pull.travis_state;
-                pull.travis_detail.jobs = [];
+                pull.pastamaker_travis_detail = data.build;
+                pull.pastamaker_travis_detail.resume_state = pull.pastamaker_travis_state;
+                pull.pastamaker_travis_detail.jobs = [];
                 data.build.job_ids.forEach(function(job_id) {
                     this.$http.get(travis_base_url + "/jobs/" + job_id,
                                    {headers: v2_headers}
                     ).success(function(data, status, headers) {
-                        if (pull.travis_state == "pending" && data.job.state == "started") {
-                            pull.travis_detail.resume_state = "working";
+                        if (pull.pastamaker_travis_state == "pending" && data.job.state == "started") {
+                            pull.pastamaker_travis_detail.resume_state = "working";
                         }
-                        pull.travis_detail.jobs.push(data.job);
+                        pull.pastamaker_travis_detail.jobs.push(data.job);
                     }.bind(this));
                 }.bind(this))
             }.bind(this));
