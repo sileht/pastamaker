@@ -252,7 +252,7 @@ class PastaMakerEngine(object):
         LOG.info("%s, retrieving pull requests", self._get_logprefix(branch))
         pulls = self._r.get_pulls(sort="created", direction="asc", base=branch)
         LOG.info("%s, fullify pull requests", self._get_logprefix(branch))
-        with futures.ThreadPoolExecutor() as tpe:
+        with futures.ThreadPoolExecutor(max_worker=1) as tpe:
             list(tpe.map(lambda p: p.fullify(), pulls))
         return self.sort_save_and_log_queues(branch, pulls)
 
