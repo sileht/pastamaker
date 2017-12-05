@@ -167,7 +167,7 @@ def compute_weight(pull):
         # selected PR that we just rebase
         weight = 10
     elif (pull.mergeable_state == "behind"
-          and pull.pastamaker["sync_with_master"]):
+          and not pull.pastamaker["sync_with_master"]):
         # Not up2date, but ready to merge, is branch updatable
         if pull.pastamaker["travis_state"] == "success":
             weight = 7
