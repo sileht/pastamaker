@@ -217,6 +217,10 @@ class PastaMakerEngine(object):
 
     def set_cache_queues(self, branch, raw_pulls):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
+        for p in raw_pulls:
+            LOG.info("saving pull %s to cache (%s)" % (
+                p["number"], ", ".join([k for k in p
+                                        if k.startswith("pastamaker_")])))
         if raw_pulls:
             payload = ujson.dumps(raw_pulls)
             payload = lz4.block.compress(payload)
