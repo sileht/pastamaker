@@ -1,4 +1,5 @@
 ---
+workers: 5
 base_url: "<required>"
 integration_id: "<required>"
 private_key: "<required>"

@@ -23,6 +23,7 @@ import github
 import lz4.block
 import ujson
 
+from pastamaker import config
 from pastamaker import gh_branch  # noqa
 from pastamaker import gh_pr
 from pastamaker import utils
@@ -231,20 +232,13 @@ class PastaMakerEngine(object):
             pulls = ujson.loads(lz4.block.decompress(data))
         else:
             pulls = []
-        found = False
-        for i, pull in list(enumerate(pulls)):
-            pull = gh_pr.from_cache(self._r, pull)
-            if pull.number == incoming_pull.number:
-                LOG.info("%s: replaced in cache" % incoming_pull.pretty())
-                pull = incoming_pull
-                found = True
-            pulls[i] = pull
-        if incoming_pull.is_merged():
-            if incoming_pull in pulls:
-                LOG.info("%s: removed from cache" % incoming_pull.pretty())
-                pulls.remove(incoming_pull)
-        elif not found:
-            LOG.info("%s: appended to cache" % incoming_pull.pretty())
+
+        pulls = [p for p in pulls if p["number"] == incoming_pull.number]
+
+        with futures.ThreadPoolExecutor(max_workers=config.WORKERS) as tpe:
+            pulls = list(tpe.map(lambda p: gh_pr.from_cache(self._r, p)))
+
+        if not incoming_pull.is_merged():
             pulls.append(incoming_pull)
         return self.sort_save_and_log_queues(branch, pulls)
 
@@ -252,7 +246,7 @@ class PastaMakerEngine(object):
         LOG.info("%s, retrieving pull requests", self._get_logprefix(branch))
         pulls = self._r.get_pulls(sort="created", direction="asc", base=branch)
         LOG.info("%s, fullify pull requests", self._get_logprefix(branch))
-        with futures.ThreadPoolExecutor(max_worker=1) as tpe:
+        with futures.ThreadPoolExecutor(max_workers=config.WORKERS) as tpe:
             list(tpe.map(lambda p: p.fullify(), pulls))
         return self.sort_save_and_log_queues(branch, pulls)
 
