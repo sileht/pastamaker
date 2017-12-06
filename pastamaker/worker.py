@@ -36,10 +36,6 @@ def event_handler(event_type, data):
                                            config.PRIVATE_KEY)
     token = integration.get_access_token(data["installation"]["id"]).token
     g = github.Github(token)
-    rate = g.get_rate_limit().rate
-    LOG.info("ratelimit: %s/%s, reset at %s" % (rate.remaining, rate.limit,
-                                                rate.reset))
-
     try:
         user = g.get_user(data["repository"]["owner"]["login"])
         repo = user.get_repo(data["repository"]["name"])

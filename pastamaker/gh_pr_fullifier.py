@@ -44,7 +44,6 @@ def ensure_mergable_state(pull):
             break
         time.sleep(0.42)  # you known, this one always work
 
-    LOG.info("%s, refreshed", pull.pretty())
     return pull
 
 
@@ -231,6 +230,7 @@ def jsonify(pull):
 
 
 def fullify(pull, cache=None, **extra):
+    LOG.info("%s, fullifing...", pull.pretty())
     if not hasattr(pull, "pastamaker"):
         pull.pastamaker = {"fullified": False}
 
@@ -244,17 +244,13 @@ def fullify(pull, cache=None, **extra):
                     value = CACHE_HOOK_FROM[key](pull, value)
             else:
                 start = time.time()
-                LOG.info("%s, begin computing %s" % (pull.pretty(), key))
+                LOG.debug("%s, begin computing %s" % (pull.pretty(), key))
                 value = method(pull, **extra)
-                LOG.info("%s, end computing %s: %s sec" % (
+                LOG.debug("%s, end computing %s: %s sec" % (
                     pull.pretty(), key, time.time() - start))
-                if cache:
-                    LOG.warning("%s, %s missing in cache (%s)" % (
-                        pull.pretty(), key,
-                        ", ".join([k for k in cache.keys()
-                                   if k.startswith("pastamaker_")])))
 
             pull.pastamaker[key] = value
 
     pull.pastamaker["fullified"] = True
+    LOG.info("%s, fullified", pull.pretty())
     return pull

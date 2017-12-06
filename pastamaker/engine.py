@@ -72,7 +72,10 @@ class PastaMakerEngine(object):
                 p_info = self._get_logprefix()
             extra = ", ignored"
 
+        rate = self._g.get_rate_limit().rate
         LOG.info("***********************************************************")
+        LOG.info("%s ratelimit: %s/%s, reset at %s", p_info,
+                 rate.remaining, rate.limit, rate.reset)
         LOG.info("%s received event '%s'%s", p_info, event_type, extra)
 
     def handle(self, event_type, data):
@@ -254,10 +257,9 @@ class PastaMakerEngine(object):
 
     def set_cache_queues(self, branch, raw_pulls):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
-        for p in raw_pulls:
-            LOG.info("saving pull %s to cache (%s)" % (
-                p["number"], ", ".join([k for k in p
-                                        if k.startswith("pastamaker_")])))
+        LOG.info("%s, saving pull %d to cache (%s)",
+                 self._get_logprefix(branch), len(raw_pulls),
+                 [p["number"] for p in raw_pulls])
         if raw_pulls:
             payload = ujson.dumps(raw_pulls)
             payload = lz4.block.compress(payload)

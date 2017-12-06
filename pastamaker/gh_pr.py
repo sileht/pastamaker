@@ -25,15 +25,11 @@ LOG = logging.getLogger(__name__)
 
 
 def pretty(self):
-    if getattr(self, "pastamaker", {}).get("fullified", False):
-        travis_state = self.pastamaker["travis_state"]
-        approvals = len(self.pastamaker["approvals"][0])
-        weight = (self.pastamaker["weight"]
-                  if self.pastamaker["weight"] >= 0
-                  else "NA")
-        synced = self.pastamaker["sync_with_master"]
-    else:
-        travis_state = approvals = weight = synced = "nc"
+    extra = getattr(self, "pastamaker", {})
+    travis_state = extra.get("travis_state", "nc")
+    approvals = len(extra["approvals"][0]) if "approvals" in extra else "nc"
+    weight = extra["weight"] if extra.get("weight", -1) >= 0 else "NA"
+    synced = extra.get("sync_with_master", "nc")
     return "%s/%s/pull/%s@%s (%s/%s/%s/%s/%s)" % (
         self.base.user.login,
         self.base.repo.name,
