@@ -59,6 +59,8 @@ def auth():
 @app.route("/refresh/<owner>/<repo>/<path:refresh_ref>",
            methods=["POST"])
 def refresh(owner, repo, refresh_ref):
+    authentification()
+
     integration = github.GithubIntegration(config.INTEGRATION_ID,
                                            config.PRIVATE_KEY)
 
