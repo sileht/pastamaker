@@ -200,7 +200,7 @@ def cache_hook_commits_to(value):
 
 # Order matter, some method need result of some other
 FULLIFIER = [
-    ("commits", lambda p: list(p.get_commits())),
+    ("commits", lambda p, **extra: list(p.get_commits())),
     ("sync_with_master", compute_sync_with_mater),
     ("approvals", compute_approvals),
     ("approved", compute_approved),            # Need approvals
