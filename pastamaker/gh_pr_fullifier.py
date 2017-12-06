@@ -48,7 +48,7 @@ def ensure_mergable_state(pull):
     return pull
 
 
-def compute_travis_detail(pull):
+def compute_travis_detail(pull, **extra):
     if (not pull.pastamaker["travis_url"] or
             pull.pastamaker["travis_url"] == "#"):
         return None
@@ -79,14 +79,12 @@ def compute_travis_detail(pull):
     return build
 
 
-def compute_approvals(pull):
-    allowed = [u.id for u in pull.base.repo.get_collaborators()]
-
+def compute_approvals(pull, **extra):
     users_info = {}
     reviews_ok = set()
     reviews_ko = set()
     for review in pull.get_reviews():
-        if review.user.id not in allowed:
+        if review.user.id not in extra["collaborators"]:
             continue
 
         users_info[review.user.login] = review.user.raw_data
@@ -118,7 +116,7 @@ def compute_approvals(pull):
             required, remaining)
 
 
-def compute_ci_statuses(pull):
+def compute_ci_statuses(pull, **extra):
     commit = pull.base.repo.get_commit(pull.head.sha)
     statuses = {}
     # NOTE(sileht): Statuses are returned in reverse chronological order.
@@ -128,7 +126,7 @@ def compute_ci_statuses(pull):
     return statuses
 
 
-def compute_approved(pull):
+def compute_approved(pull, **extra):
     approved = len(pull.pastamaker["approvals"][0])
     requested_changes = len(pull.pastamaker['approvals'][1])
     required = pull.pastamaker['approvals'][2]
@@ -138,19 +136,19 @@ def compute_approved(pull):
         return approved >= required
 
 
-def compute_travis_state(pull):
+def compute_travis_state(pull, **extra):
     return pull.pastamaker["ci_statuses"].get(
         "continuous-integration/travis-ci/pr", {"state": "unknown"}
     )["state"]
 
 
-def compute_travis_url(pull):
+def compute_travis_url(pull, **extra):
     return pull.pastamaker["ci_statuses"].get(
         "continuous-integration/travis-ci/pr", {"url": "#"}
     )["url"]
 
 
-def compute_weight(pull):
+def compute_weight(pull, **extra):
     if not pull.pastamaker["approved"]:
         weight = -1
     elif (pull.mergeable_state in ["clean", "unstable"]
@@ -186,9 +184,8 @@ def compute_weight(pull):
     return weight
 
 
-def compute_sync_with_mater(pull):
-    branch = pull.base.repo.get_branch(pull.base.ref)
-    return pull.base.sha == branch.commit.sha
+def compute_sync_with_mater(pull, **extra):
+    return pull.base.sha == extra["ref_branch_sha"]
 
 
 def cache_hook_commits_from(pull, cache):
@@ -233,7 +230,7 @@ def jsonify(pull):
     return raw
 
 
-def fullify(pull, cache=None):
+def fullify(pull, cache=None, **extra):
     if not hasattr(pull, "pastamaker"):
         pull.pastamaker = {"fullified": False}
 
@@ -248,7 +245,7 @@ def fullify(pull, cache=None):
             else:
                 start = time.time()
                 LOG.info("%s, begin computing %s" % (pull.pretty(), key))
-                value = method(pull)
+                value = method(pull, **extra)
                 LOG.info("%s, end computing %s: %s sec" % (
                     pull.pretty(), key, time.time() - start))
                 if cache:
