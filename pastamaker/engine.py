@@ -142,7 +142,7 @@ class PastaMakerEngine(object):
         if incoming_pull:
             # First, remove informations we don't want to get from cache
             if event_type == "refresh":
-                cache = None
+                cache = {}
             else:
                 cache = self.get_cache_for_pull(current_branch, incoming_pull)
                 cache = dict((k, v) for k, v in cache.items()
@@ -257,7 +257,7 @@ class PastaMakerEngine(object):
 
     def set_cache_queues(self, branch, raw_pulls):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
-        LOG.info("%s, saving pull %d to cache (%s)",
+        LOG.info("%s, saving %d pulls to cache (%s)",
                  self._get_logprefix(branch), len(raw_pulls),
                  [p["number"] for p in raw_pulls])
         if raw_pulls:
@@ -278,6 +278,7 @@ class PastaMakerEngine(object):
         for pull in pulls:
             if pull["number"] == incoming_pull.number:
                 return pull
+        return {}
 
     def get_updated_queues_from_cache(self, branch, incoming_pull):
         key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
@@ -312,7 +313,6 @@ class PastaMakerEngine(object):
     def get_updated_queues_from_github(self, branch, **extra):
         LOG.info("%s, retrieving pull requests", self._get_logprefix(branch))
         pulls = self._r.get_pulls(sort="created", direction="asc", base=branch)
-        LOG.info("%s, fullify pull requests", self._get_logprefix(branch))
         with futures.ThreadPoolExecutor(max_workers=config.WORKERS) as tpe:
             list(tpe.map(lambda p: p.fullify(**extra), pulls))
         return self.sort_save_and_log_queues(branch, pulls)
@@ -323,8 +323,6 @@ class PastaMakerEngine(object):
         LOG.info("%s, cache content:" % self._get_logprefix(branch))
         for p in pulls:
             LOG.info("%s, sha: %s->%s)", p.pretty(), p.base.sha, p.head.sha)
-        LOG.info("%s, %s pull request(s) found" % (self._get_logprefix(branch),
-                                                   len(pulls)))
         raw_queues = [p.jsonify() for p in pulls]
         self.set_cache_queues(branch, raw_queues)
         return pulls

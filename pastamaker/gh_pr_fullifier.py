@@ -230,9 +230,9 @@ def jsonify(pull):
 
 
 def fullify(pull, cache=None, **extra):
-    LOG.info("%s, fullifing...", pull.pretty())
+    LOG.debug("%s, fullifing...", pull.pretty())
     if not hasattr(pull, "pastamaker"):
-        pull.pastamaker = {"fullified": False}
+        pull.pastamaker = {}
 
     pull = ensure_mergable_state(pull)
 
@@ -242,15 +242,16 @@ def fullify(pull, cache=None, **extra):
                 value = cache["pastamaker_%s" % key]
                 if key in CACHE_HOOK_FROM:
                     value = CACHE_HOOK_FROM[key](pull, value)
+            elif key == "raw_data":
+                value = method(pull, **extra)
             else:
                 start = time.time()
-                LOG.debug("%s, begin computing %s" % (pull.pretty(), key))
+                LOG.info("%s, compute %s" % (pull.pretty(), key))
                 value = method(pull, **extra)
-                LOG.debug("%s, end computing %s: %s sec" % (
+                LOG.debug("%s, %s computed in %s sec" % (
                     pull.pretty(), key, time.time() - start))
 
             pull.pastamaker[key] = value
 
-    pull.pastamaker["fullified"] = True
-    LOG.info("%s, fullified", pull.pretty())
+    LOG.debug("%s, fullified", pull.pretty())
     return pull
