@@ -151,20 +151,17 @@ def compute_weight(pull, **extra):
     if not pull.pastamaker["approved"]:
         weight = -1
     elif (pull.mergeable_state in ["clean", "unstable"]
-          and pull.pastamaker["travis_state"] == "success"
-          and pull.pastamaker["sync_with_master"]):
+          and pull.pastamaker["travis_state"] == "success"):
         # Best PR ever, up2date and CI OK
         weight = 11
     elif pull.mergeable_state in ["clean", "unstable"]:
         weight = 10
     elif (pull.mergeable_state == "blocked"
-          and pull.pastamaker["sync_with_master"]
           and pull.pastamaker["travis_state"] == "pending"):
         # Maybe clean soon, or maybe this is the previous run
         # selected PR that we just rebase
         weight = 10
-    elif (pull.mergeable_state == "behind"
-          and not pull.pastamaker["sync_with_master"]):
+    elif pull.mergeable_state == "behind":
         # Not up2date, but ready to merge, is branch updatable
         if pull.pastamaker["travis_state"] == "success":
             weight = 7
@@ -200,7 +197,7 @@ def cache_hook_commits_to(value):
 # Order matter, some method need result of some other
 FULLIFIER = [
     ("commits", lambda p, **extra: list(p.get_commits())),
-    ("sync_with_master", compute_sync_with_mater),
+    # ("sync_with_master", compute_sync_with_mater),
     ("approvals", compute_approvals),
     ("approved", compute_approved),            # Need approvals
     ("ci_statuses", compute_ci_statuses),      # Need approvals
