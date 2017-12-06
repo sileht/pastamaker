@@ -52,6 +52,7 @@ def error_handler(job, *exc_info):
 
 def main():
     utils.setup_logging()
+    config.log()
     gh_pr.monkeypatch_github()
     if config.FLUSH_REDIS_ON_STARTUP:
         utils.get_redis().flushall()

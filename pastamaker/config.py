@@ -15,8 +15,12 @@
 # under the License.
 
 
+import logging
 import os
 import yaml
+
+LOG = logging.getLogger(__name__)
+
 
 with open("config_default.yml") as f:
     CONFIG = yaml.load(f.read())
@@ -25,6 +29,7 @@ with open("config.yml") as f:
     for key, value in dict(yaml.load(f.read())).items():
         CONFIG[key] = value
 
+global cfg_msg
 cfg_msg = ""
 for name, config_value in CONFIG.items():
     name = name.upper()
@@ -41,7 +46,10 @@ for name, config_value in CONFIG.items():
         value = "*****"
     cfg_msg += "* PASTAMAKER_%s: %s\n" % (name, value)
 
-print("""
+
+def log():
+    global cfg_msg
+    LOG.info("""
 ##################### CONFIGURATION ######################
 %s##########################################################
 """ % cfg_msg)

@@ -15,10 +15,12 @@
 # under the License.
 
 
+from pastamaker import config
 from pastamaker import gh_pr
 from pastamaker import utils
 from pastamaker import web
 
+config.log()
 utils.setup_logging()
 gh_pr.monkeypatch_github()
 application = web.app
