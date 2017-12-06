@@ -253,7 +253,7 @@ class PastaMakerEngine(object):
             pulls = list(tpe.map(lambda p: gh_pr.from_cache(self._r, p),
                                  pulls))
 
-        if not incoming_pull.is_merged():
+        if incoming_pull.state == "open":
             LOG.info("%s, add #%s to cache", incoming_pull.pretty(),
                      incoming_pull.number)
             pulls.append(incoming_pull)
