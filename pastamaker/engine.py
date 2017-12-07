@@ -116,7 +116,7 @@ class PastaMakerEngine(object):
 
         # Unhandled and already logged
         if event_type not in ["pull_request", "pull_request_review",
-                              "pull_request_review_comment"
+                              "pull_request_review_comment",
                               "status", "refresh"]:
             LOG.info("No need to proceed queue (unwanted event_type)")
             return
