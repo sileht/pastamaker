@@ -21,7 +21,8 @@ import lz4
 
 from pastamaker import utils
 
-owner, repo, branch = sys.argv[1].split("/")
+owner, _, left = sys.argv[1].partition("/")
+repo, _, branch = left.partition("/")
 
 key = "queues~%s~%s~%s" % (owner, repo, branch)
 data = utils.get_redis().get(key)
