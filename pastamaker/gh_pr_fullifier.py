@@ -116,12 +116,18 @@ def compute_approvals(pull, **extra):
 
 
 def compute_ci_statuses(pull, **extra):
-    commit = pull.base.repo.get_commit(pull.head.sha)
+    # We need only travis, so shorcut to it here
+    if "travis" in extra:
+        raw_statuses = [extra["travis"]]
+    else:
+        # NOTE(sileht): Statuses are returned in reverse chronological order.
+        # The first status in the list will be the latest one.
+        commit = pull.base.repo.get_commit(pull.head.sha)
+        raw_statuses = [s.raw_data
+                        for s in reversed(list(commit.get_statuses()))]
     statuses = {}
-    # NOTE(sileht): Statuses are returned in reverse chronological order.
-    # The first status in the list will be the latest one.
-    for s in reversed(list(commit.get_statuses())):
-        statuses[s.context] = {"state": s.state, "url": s.target_url}
+    for s in raw_statuses:
+        statuses[s["context"]] = {"state": s["state"], "url": s["target_url"]}
     return statuses
 
 

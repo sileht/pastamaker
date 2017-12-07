@@ -132,6 +132,10 @@ class PastaMakerEngine(object):
             "collaborators": [u.id for u in self._r.get_collaborators()],
         }
 
+        if (event_type == "status" and
+                data["context"] == "continuous-integration/travis-ci/pr"):
+            fullify_extra["travis"] = data
+
         # We don't care about non collaborators review
         if (event_type == "pull_request_review" and
                 data["review"]["user"]["id"] not in
