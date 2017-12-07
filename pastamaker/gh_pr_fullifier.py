@@ -229,7 +229,7 @@ def fullify(pull, cache=None, **extra):
         if key not in pull.pastamaker:
             if cache and "pastamaker_%s" % key in cache:
                 value = cache["pastamaker_%s" % key]
-                value = cache_hook_convert_list(key, pull, value)
+                value = cache_hook_convert_list(pull, key, value)
             elif key == "raw_data":
                 value = method(pull, **extra)
             else:
