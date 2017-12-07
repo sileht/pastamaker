@@ -163,3 +163,7 @@ def monkeypatch_github():
 
     # FIXME(sileht): remove me, used by engine for sorting pulls
     p.pastamaker_weight = property(lambda p: p.pastamaker["weight"])
+
+    # FIXME(sileht): Workaround https://github.com/PyGithub/PyGithub/issues/660
+    github.PullRequestReview.PullRequestReview._completeIfNeeded = (
+        lambda self: None)

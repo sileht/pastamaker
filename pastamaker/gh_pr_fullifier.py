@@ -214,8 +214,8 @@ def jsonify(pull):
             try:
                 value = [item.raw_data for item in value]
             except AttributeError:
-                LOG.error("%s, fail to cache %s: %s",
-                          pull.pretty(), key, value)
+                LOG.exception("%s, fail to cache %s: %s",
+                              pull.pretty(), key, value)
 
         raw["pastamaker_%s" % key] = value
     return raw
