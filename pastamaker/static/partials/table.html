@@ -53,7 +53,7 @@
              <td class="state"><a href="{{ pull.html_url }}/commits" target="_blank">{{ pull.commits }}</a></td>
              <td class="state"><a href="{{ pull.html_url }}/files" target="_blank">{{ pull.changed_files }}</a></td>
              <td class="last-updated"><time am-time-ago="pull.updated_at"></time></td>
-             <td class="state">
+             <td class="state" ng-if="pull.pastamaker_travis_detail != null">
                  <a href="#" ng-click="toggle_travis_info(pull)">
                     <span ng-if="pull.pastamaker_travis_detail.resume_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
                     <span ng-if="pull.pastamaker_travis_detail.resume_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
@@ -61,6 +61,16 @@
                     <span ng-if="pull.pastamaker_travis_detail.resume_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
                     <span ng-if="pull.pastamaker_travis_detail.resume_state == 'working'" title="Latest test pending" class="maybe glyphicon glyphicon-cog"></span>
                     <span ng-if="pull.pastamaker_travis_detail.resume_state == 'unknown'" title="Latest test unknown" class="maybe glyphicon glyphicon-question-sign"></span>
+                 </a>
+             </td>
+             <td class="state" ng-if="pull.pastamaker_travis_detail == null">
+                 <a href="#" ng-click="toggle_travis_info(pull)">
+                    <span ng-if="pull.pastamaker_travis_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
+                    <span ng-if="pull.pastamaker_travis_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
+                    <span ng-if="pull.pastamaker_travis_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
+                    <span ng-if="pull.pastamaker_travis_state == 'pending'" title="Latest test pending" class="maybe glyphicon glyphicon-time"></span>
+                    <span ng-if="pull.pastamaker_travis_state == 'working'" title="Latest test pending" class="maybe glyphicon glyphicon-cog"></span>
+                    <span ng-if="pull.pastamaker_travis_state == 'unknown'" title="Latest test unknown" class="maybe glyphicon glyphicon-question-sign"></span>
                  </a>
              </td>
              <td class="mergeable">
