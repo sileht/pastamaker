@@ -205,17 +205,14 @@ def jsonify(pull):
     for key, method in FULLIFIER:
         value = pull.pastamaker[key]
         if key in CACHE_HOOK_LIST_CONVERT:
-            value = [item.raw_data for item in value]
+            try:
+                value = [item.raw_data for item in value]
+            except AttributeError:
+                LOG.error("%s, fail to cache %s: %s",
+                          pull.pretty(), key, value)
+
         raw["pastamaker_%s" % key] = value
     return raw
-
-
-def cache_hook_convert_list(pull, key, value):
-    klass = CACHE_HOOK_LIST_CONVERT.get(key)
-    if klass:
-        value = [klass(pull.base.repo._requester, {}, item,
-                       completed=True) for item in value]
-    return value
 
 
 def fullify(pull, cache=None, **extra):
@@ -229,7 +226,10 @@ def fullify(pull, cache=None, **extra):
         if key not in pull.pastamaker:
             if cache and "pastamaker_%s" % key in cache:
                 value = cache["pastamaker_%s" % key]
-                value = cache_hook_convert_list(pull, key, value)
+                klass = CACHE_HOOK_LIST_CONVERT.get(key)
+                if klass:
+                    value = [klass(pull.base.repo._requester, {}, item,
+                                   completed=True) for item in value]
             elif key == "raw_data":
                 value = method(pull, **extra)
             else:
