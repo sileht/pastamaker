@@ -187,14 +187,6 @@ class PastaMakerEngine(object):
 
         # NOTE(sileht): PullRequest updated or comment posted, maybe we need to
         # update github
-        need_status_update = (event_type in ["pull_request",
-                                             "pull_request_review"])
-        if need_status_update and incoming_pull:
-            if not incoming_pull.pastamaker_github_post_check_status():
-                # Status not updated, don't need to update the queue
-                LOG.info("No need to proceed queue")
-                return
-
         # Get and refresh the queues
         if not incoming_pull:
             queues = self.get_updated_queues_from_github(
@@ -206,7 +198,8 @@ class PastaMakerEngine(object):
                 LOG.warning("FIXME: We got a event without incoming_pull:"
                             "%s : %s" % (event_type, data))
         else:
-            if event_type == "refresh":
+            if event_type in ["pull_request", "pull_request_review",
+                              "refresh"]:
                 incoming_pull.pastamaker_github_post_check_status()
             queues = self.get_updated_queues_from_cache(current_branch,
                                                         incoming_pull)
