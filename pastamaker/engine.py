@@ -242,7 +242,7 @@ class PastaMakerEngine(object):
         p = queues[0]
         LOG.info("%s selected", p.pretty())
 
-        if p.mergeable_state in "clean":
+        if p.pastamaker_weight == 11:
             if p.pastamaker_merge():
                 # Wait for the closed event now
                 LOG.info("%s -> merged", p.pretty())
