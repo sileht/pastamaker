@@ -82,7 +82,7 @@ def compute_approvals(pull, **extra):
     users_info = {}
     reviews_ok = set()
     reviews_ko = set()
-    for review in pull.get_reviews():
+    for review in pull.pastamaker["reviews"]:
         if review.user.id not in extra["collaborators"]:
             continue
 
@@ -175,30 +175,16 @@ def compute_weight(pull, **extra):
         weight += 1
     # LOG.info("%s prio: %s, %s, %s, %s, %s", pull.pretty(), weight,
     #          pull.pastamaker["approved"], pull.mergeable_state,
-    #          pull.pastamaker["travis_state"],
-    #          pull.pastamaker["sync_with_master"])
+    #          pull.pastamaker["travis_state"])
     return weight
-
-
-def compute_sync_with_mater(pull, **extra):
-    return pull.base.sha == extra["ref_branch_sha"]
-
-
-def cache_hook_commits_from(pull, cache):
-    return [github.Commit.Commit(pull.base.repo._requester, {}, raw_commit,
-                                 completed=True)
-            for raw_commit in cache]
-
-
-def cache_hook_commits_to(value):
-    return [c.raw_data for c in value]
 
 
 # Order matter, some method need result of some other
 FULLIFIER = [
     ("commits", lambda p, **extra: list(p.get_commits())),
-    # ("sync_with_master", compute_sync_with_mater),
-    ("approvals", compute_approvals),
+    # ("comments", lambda p, **extra: list(p.get_review_comments())),
+    ("reviews", lambda p, **extra: list(p.get_reviews())),
+    ("approvals", compute_approvals),          # Need reviews
     ("approved", compute_approved),            # Need approvals
     ("ci_statuses", compute_ci_statuses),      # Need approvals
     ("travis_state", compute_travis_state),    # Need ci_statuses
@@ -207,12 +193,10 @@ FULLIFIER = [
     ("weight", compute_weight),                # Need approved, travis_state
 ]
 
-CACHE_HOOK_FROM = {
-    "commits": cache_hook_commits_from
-}
-
-CACHE_HOOK_TO = {
-    "commits": cache_hook_commits_to
+CACHE_HOOK_LIST_CONVERT = {
+    "commits": github.Commit.Commit,
+    "reviews": github.PullRequestReview.PullRequestReview,
+    "comments": github.PullRequestComment.PullRequestComment,
 }
 
 
@@ -220,10 +204,18 @@ def jsonify(pull):
     raw = copy.copy(pull.raw_data)
     for key, method in FULLIFIER:
         value = pull.pastamaker[key]
-        if key in CACHE_HOOK_TO:
-            value = CACHE_HOOK_TO[key](value)
+        if key in CACHE_HOOK_LIST_CONVERT:
+            value = [item.raw_data for item in value]
         raw["pastamaker_%s" % key] = value
     return raw
+
+
+def cache_hook_convert_list(pull, key, value):
+    klass = CACHE_HOOK_LIST_CONVERT.get(key)
+    if klass:
+        value = [klass(pull.base.repo._requester, {}, item,
+                       completed=True) for item in value]
+    return value
 
 
 def fullify(pull, cache=None, **extra):
@@ -237,8 +229,7 @@ def fullify(pull, cache=None, **extra):
         if key not in pull.pastamaker:
             if cache and "pastamaker_%s" % key in cache:
                 value = cache["pastamaker_%s" % key]
-                if key in CACHE_HOOK_FROM:
-                    value = CACHE_HOOK_FROM[key](pull, value)
+                value = cache_hook_convert_list(key, pull, value)
             elif key == "raw_data":
                 value = method(pull, **extra)
             else:

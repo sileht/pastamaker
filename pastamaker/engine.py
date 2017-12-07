@@ -116,6 +116,7 @@ class PastaMakerEngine(object):
 
         # Unhandled and already logged
         if event_type not in ["pull_request", "pull_request_review",
+                              "pull_request_review_comment"
                               "status", "refresh"]:
             LOG.info("No need to proceed queue")
             return
@@ -153,16 +154,20 @@ class PastaMakerEngine(object):
                     cache.pop("pastamaker_travis_url", None)
                     cache.pop("pastamaker_travis_detail", None)
                 elif event_type == "pull_request_review":
+                    cache.pop("pastamaker_reviews", None)
                     cache.pop("pastamaker_approvals", None)
                     cache.pop("pastamaker_approved", None)
+                elif event_type == "pull_request_review_comment":
+                    cache.pop("pastamaker_comments", None)
                 elif (event_type == "pull_request"
                       and data["action"] != "closed"):
                     cache.pop("pastamaker_commits", None)
 
             incoming_pull = incoming_pull.fullify(cache, **fullify_extra)
 
-        # NOTE(sileht): refresh only travis detail
-        if event_type == "status" and data["state"] == "pending":
+        # NOTE(sileht): just refresh this pull request in cache
+        if ((event_type == "status" and data["state"] == "pending")
+                or event_type == "pull_request_review_comment"):
             self.get_updated_queues_from_cache(current_branch,
                                                incoming_pull)
             LOG.info("No need to proceed queue")
