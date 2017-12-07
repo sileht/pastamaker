@@ -52,6 +52,11 @@ class PastaMakerEngine(object):
             extra = ", action: %s, review-state: %s" % (
                 data["action"], data["review"]["state"])
 
+        elif event_type == "pull_request_review_comment":
+            p_info = incoming_pull.pretty()
+            extra = ", action: %s, review-state: %s" % (
+                data["action"], data["comment"]["position"])
+
         elif event_type == "status":
             if incoming_pull:
                 p_info = incoming_pull.pretty()
@@ -136,13 +141,6 @@ class PastaMakerEngine(object):
                 data["context"] == "continuous-integration/travis-ci/pr"):
             fullify_extra["travis"] = data
 
-        # We don't care about non collaborators review
-        if (event_type == "pull_request_review" and
-                data["review"]["user"]["id"] not in
-                fullify_extra["collaborators"]):
-            LOG.info("No need to proceed queue (non-collaborators review)")
-            return
-
         # Gather missing github/travis information and compute weight
         if incoming_pull:
             # First, remove informations we don't want to get from cache
@@ -179,6 +177,13 @@ class PastaMakerEngine(object):
             self.get_updated_queues_from_cache(current_branch,
                                                incoming_pull)
             LOG.info("Just update cache (pull_request_review_comment)")
+            return
+        elif (event_type == "pull_request_review" and
+                data["review"]["user"]["id"] not in
+                fullify_extra["collaborators"]):
+            self.get_updated_queues_from_cache(current_branch,
+                                               incoming_pull)
+            LOG.info("Just update cache (pull_request_review non-collab)")
             return
 
         # NOTE(sileht): We check the state of incoming_pull and the event

@@ -188,7 +188,7 @@ def compute_weight(pull, **extra):
 # Order matter, some method need result of some other
 FULLIFIER = [
     ("commits", lambda p, **extra: list(p.get_commits())),
-    # ("comments", lambda p, **extra: list(p.get_review_comments())),
+    ("comments", lambda p, **extra: list(p.get_review_comments())),
     ("reviews", lambda p, **extra: list(p.get_reviews())),
     ("approvals", compute_approvals),          # Need reviews
     ("approved", compute_approved),            # Need approvals
