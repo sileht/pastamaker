@@ -49,7 +49,7 @@
                  <a href="#" ng-click="toggle_commits_info(pull)" style="display:inline-block;padding-left:5px;"><span ng-class="{'glyphicon glyphicon-circle-arrow-down': pull.open_commits_row, 'glyphicon glyphicon-circle-arrow-right': !pull.open_commits_row}"></a>
                  <a href="{{ pull.html_url }}" target="_blank">{{ pull.title }} <span style="color:grey">#{{ pull.number }}</span></a>
              </td>
-             <td class="state"><a href="#" ng-click="toggle_reviews_info(pull)">{{ pull.comments }}</a></td>
+             <td class="state"><a href="#" ng-click="toggle_comments_info(pull)">{{ pull.comments }}</a></td>
              <td class="state"><a href="{{ pull.html_url }}/commits" target="_blank">{{ pull.commits }}</a></td>
              <td class="state"><a href="{{ pull.html_url }}/files" target="_blank">{{ pull.changed_files }}</a></td>
              <td class="last-updated"><time am-time-ago="pull.updated_at"></time></td>
@@ -101,18 +101,12 @@
                 <span ng-if="pull.pastamaker_weight < 0">N/A</span>
             </td>
         </tr>
-        <tr ng-if="pull.open_reviews_row">
+        <tr ng-if="pull.open_comments_row">
             <td colspan="11">
-                <a href="#" class="pull-right" ng-click="toggle_reviews_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
-                <a href="#" class="pull-right" style="margin-right:5px" href="{{ pull.html_url }}"><span class="glyphicon glyphicon-new-window"></span></a>
-                <ul>
-                  <li ng-repeat="review in pull.pastamaker_reviews">
-                    <a href="{{ review.user.html_url }}" target="_blank" title="{{ review.user.login }}"><img ng-src="{{ review.user.avatar_url }}" class="avatar" alt="{{ review.user.login }}"></a> {{ review.body }} {{ review.state }}
-                  </li>
-                </ul>
+                <a href="#" class="pull-right" ng-click="toggle_comments_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
                 <ul>
                   <li ng-repeat="comment in pull.pastamaker_comments">
-                    <a href="{{ comment.user.html_url }}" target="_blank" title="{{ comment.user.login }}"><img ng-src="{{ comment.user.avatar_url }}" class="avatar" alt="{{ comment.user.login }}"></a> {{ comment.body }} {{ comment.state }}
+                      <a href="{{ comment.user.html_url }}" target="_blank" title="{{ comment.user.login }}"><img ng-src="{{ comment.user.avatar_url }}" class="avatar" alt="{{ comment.user.login }}"></a> {{ comment.created_at}} | {{comment.state }} | {{ comment.body }}
                   </li>
                 </ul>
             </td>

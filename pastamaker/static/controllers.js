@@ -18,7 +18,7 @@ app.classy.controller({
         this.$scope.event = false;
         this.opened_travis_tabs = {};
         this.opened_commits_tabs = {};
-        this.opened_reviews_tabs = {};
+        this.opened_comments_tabs = {};
         this.$scope.tabs_are_open = {};
 
         if(typeof(EventSource) !== "undefined") {
@@ -56,10 +56,10 @@ app.classy.controller({
         update_pull_requests: function(data) {
             var old_travis_tabs = this.opened_travis_tabs;
             var old_commits_tabs = this.opened_commits_tabs;
-            var old_reviews_tabs = this.opened_reviews_tabs;
+            var old_comments_tabs = this.opened_comments_tabs;
             this.opened_travis_tabs = {};
             this.opened_commits_tabs = {};
-            this.opened_reviews_tabs = {};
+            this.opened_comments_tabs = {};
             this.$scope.groups = []
             data.forEach(function(group) {
 
@@ -76,9 +76,9 @@ app.classy.controller({
                             this.toggle_commits_info(pull);
                         }
                     }
-                    if (old_reviews_tabs.hasOwnProperty(repo)){
-                        if (old_reviews_tabs[repo].indexOf(pull.number) !== -1) {
-                            this.toggle_reviews_info(pull);
+                    if (old_comments_tabs.hasOwnProperty(repo)){
+                        if (old_comments_tabs[repo].indexOf(pull.number) !== -1) {
+                            this.toggle_comments_info(pull);
                         }
                     }
                 }.bind(this));
@@ -106,25 +106,25 @@ app.classy.controller({
                     if (this.opened_commits_tabs.hasOwnProperty(repo)){
                         this.opened_commits_tabs[repo] = this.opened_commits_tabs[repo].filter(e => e !== pull.number)
                     }
-                    pull.open_reviews_row = false;
-                    if (this.opened_reviews_tabs.hasOwnProperty(repo)){
-                        this.opened_reviews_tabs[repo] = this.opened_commits_tabs[repo].filter(e => e !== pull.number)
+                    pull.open_comments_row = false;
+                    if (this.opened_comments_tabs.hasOwnProperty(repo)){
+                        this.opened_comments_tabs[repo] = this.opened_comments_tabs[repo].filter(e => e !== pull.number)
                     }
                 }.bind(this));
             }.bind(this));
         },
-        toggle_reviews_info: function(pull) {
-            var opened = pull.open_reviews_row;
+        toggle_comments_info: function(pull) {
+            var opened = pull.open_comments_row;
             var repo = pull.base.repo.full_name;
             if (!opened) {
-                if (!this.opened_reviews_tabs.hasOwnProperty(repo)){
-                    this.opened_reviews_tabs[repo] = [];
+                if (!this.opened_comments_tabs.hasOwnProperty(repo)){
+                    this.opened_comments_tabs[repo] = [];
                 }
-                this.opened_reviews_tabs[repo].push(pull.number);
-                pull.open_reviews_row = true;
+                this.opened_comments_tabs[repo].push(pull.number);
+                pull.open_comments_row = true;
             } else {
-                pull.open_reviews_row = false;
-                this.opened_reviews_tabs[repo] = this.opened_reviews_tabs[repo].filter(e => e !== pull.number)
+                pull.open_comments_row = false;
+                this.opened_comments_tabs[repo] = this.opened_comments_tabs[repo].filter(e => e !== pull.number)
             }
         },
         toggle_commits_info: function(pull) {
