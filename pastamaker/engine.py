@@ -118,13 +118,13 @@ class PastaMakerEngine(object):
         if event_type not in ["pull_request", "pull_request_review",
                               "pull_request_review_comment"
                               "status", "refresh"]:
-            LOG.info("No need to proceed queue")
+            LOG.info("No need to proceed queue (unwanted event_type)")
             return
 
         # We don't care about *labeled/*assigned/review_request*/edited
         if (event_type == "pull_request" and data["action"] not in [
                 "opened", "reopened", "closed", "synchronize"]):
-            LOG.info("No need to proceed queue")
+            LOG.info("No need to proceed queue (unwanted pull_request action)")
             return
 
         fullify_extra = {
@@ -136,7 +136,7 @@ class PastaMakerEngine(object):
         if (event_type == "pull_request_review" and
                 data["review"]["user"]["id"] not in
                 fullify_extra["collaborators"]):
-            LOG.info("No need to proceed queue")
+            LOG.info("No need to proceed queue (non-collaborators review)")
             return
 
         # Gather missing github/travis information and compute weight
@@ -166,11 +166,15 @@ class PastaMakerEngine(object):
             incoming_pull = incoming_pull.fullify(cache, **fullify_extra)
 
         # NOTE(sileht): just refresh this pull request in cache
-        if ((event_type == "status" and data["state"] == "pending")
-                or event_type == "pull_request_review_comment"):
+        if event_type == "status" and data["state"] == "pending":
             self.get_updated_queues_from_cache(current_branch,
                                                incoming_pull)
-            LOG.info("No need to proceed queue")
+            LOG.info("Just update cache (ci status pending)")
+            return
+        elif event_type == "pull_request_review_comment":
+            self.get_updated_queues_from_cache(current_branch,
+                                               incoming_pull)
+            LOG.info("Just update cache (pull_request_review_comment)")
             return
 
         # NOTE(sileht): We check the state of incoming_pull and the event
