@@ -87,6 +87,8 @@ def web_github_update_branch(p):
     s, text = web_github_get_merge_button_page(p)
     state = _web_github_branch_status(text)
     if state != "behind":
+        LOG.error("PR#%s: Can't update branch, state is not behind but %s",
+                  p.number, state)
         return False
 
     m = re.search('/update_branch" .*<input name="authenticity_token" '
