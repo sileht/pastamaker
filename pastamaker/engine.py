@@ -121,9 +121,14 @@ class PastaMakerEngine(object):
                     cache.pop("pastamaker_approved", None)
                 elif event_type == "pull_request_review_comment":
                     cache.pop("pastamaker_comments", None)
-                elif (event_type == "pull_request"
-                      and data["action"] != "closed"):
-                    cache.pop("pastamaker_commits", None)
+                elif event_type == "pull_request":
+                    if data["action"] != "closed":
+                        cache.pop("pastamaker_commits", None)
+                    if data["action"] == "synchronize":
+                        cache.pop("pastamaker_ci_statuses", None)
+                        cache.pop("pastamaker_travis_state", None)
+                        cache.pop("pastamaker_travis_url", None)
+                        cache.pop("pastamaker_travis_detail", None)
 
             incoming_pull = incoming_pull.fullify(cache, **fullify_extra)
 
