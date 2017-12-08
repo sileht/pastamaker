@@ -87,11 +87,15 @@ def pastamaker_travis_post_build_results(self):
         self.pastamaker["travis_state"].upper(),
         self.head.sha)]
     for job in self.pastamaker["travis_detail"]["jobs"]:
-        message.append('- [%s](%s): %s' % (
-            job["config"]["env"],
-            job["log_url"],
-            job["state"].upper()
-        ))
+        try:
+            message.append('- [%s](%s): %s' % (
+                job["config"]["env"],
+                job["log_url"],
+                job["state"].upper()
+            ))
+        except KeyError:
+            LOG.error("%s, malformed travis job: %s",
+                      self.pretty(), job)
     message = "\n".join(message)
     LOG.debug("%s POST comment: %s" % (self.pretty(), message))
     self.create_issue_comment(message)
