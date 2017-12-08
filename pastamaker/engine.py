@@ -96,13 +96,17 @@ class PastaMakerEngine(object):
                 data["context"] == "continuous-integration/travis-ci/pr"):
             fullify_extra["travis"] = data
 
+        # Retrieve cache
+        cached_pulls = self.load_cache(current_branch)
+
         # Gather missing github/travis information and compute weight
         if incoming_pull:
             # First, remove informations we don't want to get from cache
             if event_type == "refresh":
                 cache = {}
             else:
-                cache = self.get_cache_for_pull(current_branch, incoming_pull)
+                cache = self.get_cache_for_pull(cached_pulls, current_branch,
+                                                incoming_pull)
                 cache = dict((k, v) for k, v in cache.items()
                              if k.startswith("pastamaker_"))
                 cache.pop("pastamaker_weight", None)
@@ -125,19 +129,19 @@ class PastaMakerEngine(object):
 
         # NOTE(sileht): just refresh this pull request in cache
         if event_type == "status" and data["state"] == "pending":
-            self.get_updated_queues_from_cache(current_branch,
+            self.build_queue_and_save_to_cache(cached_pulls, current_branch,
                                                incoming_pull)
             LOG.info("Just update cache (ci status pending)")
             return
         elif event_type == "pull_request_review_comment":
-            self.get_updated_queues_from_cache(current_branch,
+            self.build_queue_and_save_to_cache(cached_pulls, current_branch,
                                                incoming_pull)
             LOG.info("Just update cache (pull_request_review_comment)")
             return
         elif (event_type == "pull_request_review" and
                 data["review"]["user"]["id"] not in
                 fullify_extra["collaborators"]):
-            self.get_updated_queues_from_cache(current_branch,
+            self.build_queue_and_save_to_cache(cached_pulls, current_branch,
                                                incoming_pull)
             LOG.info("Just update cache (pull_request_review non-collab)")
             return
@@ -170,7 +174,8 @@ class PastaMakerEngine(object):
             if event_type in ["pull_request", "pull_request_review",
                               "refresh"]:
                 incoming_pull.pastamaker_github_post_check_status()
-            queues = self.get_updated_queues_from_cache(current_branch,
+            queues = self.build_queue_and_save_to_cache(cached_pulls,
+                                                        current_branch,
                                                         incoming_pull)
 
         # Proceed the queue
@@ -235,26 +240,22 @@ class PastaMakerEngine(object):
             self._redis.delete(key)
         self._redis.publish("update", key)
 
-    def get_cache_for_pull(self, branch, incoming_pull):
-        key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
-        data = self._redis.get(key)
-        if data:
-            pulls = ujson.loads(lz4.block.decompress(data))
-        else:
-            pulls = []
-        for pull in pulls:
+    def get_cache_for_pull(self, raw_pulls, branch, incoming_pull):
+        for pull in raw_pulls:
             if pull["number"] == incoming_pull.number:
                 return pull
         return {}
 
-    def get_updated_queues_from_cache(self, branch, incoming_pull):
-        key = "queues~%s~%s~%s" % (self._u.login, self._r.name, branch)
-        data = self._redis.get(key)
+    def load_cache(self, branch):
+        cache_key = "queues~%s~%s~%s" % (self._u.login, self._r.name,
+                                         branch)
+        data = self._redis.get(cache_key)
         if data:
-            pulls = ujson.loads(lz4.block.decompress(data))
+            return ujson.loads(lz4.block.decompress(data))
         else:
-            pulls = []
+            return []
 
+    def build_queue_and_save_to_cache(self, pulls, branch, incoming_pull):
         LOG.info("%s, load %d pulls from cache (%s)",
                  incoming_pull.pretty(),
                  len(pulls),
