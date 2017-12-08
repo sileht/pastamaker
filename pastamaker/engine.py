@@ -38,51 +38,6 @@ class PastaMakerEngine(object):
         self._r = repo
         self._redis = utils.get_redis()
 
-    def _get_logprefix(self, branch="<unknown>"):
-        return (self._u.login + "/" + self._r.name +
-                "/pull/XXX@" + branch + " (-)")
-
-    def log_formated_event(self, event_type, incoming_pull, data):
-        if event_type == "pull_request":
-            p_info = incoming_pull.pretty()
-            extra = ", action: %s" % data["action"]
-
-        elif event_type == "pull_request_review":
-            p_info = incoming_pull.pretty()
-            extra = ", action: %s, review-state: %s" % (
-                data["action"], data["review"]["state"])
-
-        elif event_type == "pull_request_review_comment":
-            p_info = incoming_pull.pretty()
-            extra = ", action: %s, review-state: %s" % (
-                data["action"], data["comment"]["position"])
-
-        elif event_type == "status":
-            if incoming_pull:
-                p_info = incoming_pull.pretty()
-            else:
-                p_info = self._get_logprefix()
-            extra = ", ci-status: %s, sha: %s" % (data["state"], data["sha"])
-
-        elif event_type == "refresh":
-            if incoming_pull:
-                p_info = incoming_pull.pretty()
-            else:
-                p_info = self._get_logprefix(data["refresh_ref"])
-            extra = ""
-        else:
-            if incoming_pull:
-                p_info = incoming_pull.pretty()
-            else:
-                p_info = self._get_logprefix()
-            extra = ", ignored"
-
-        rate = self._g.get_rate_limit().rate
-        LOG.info("***********************************************************")
-        LOG.info("%s ratelimit: %s/%s, reset at %s", p_info,
-                 rate.remaining, rate.limit, rate.reset)
-        LOG.info("%s received event '%s'%s", p_info, event_type, extra)
-
     def handle(self, event_type, data):
         # Everything start here
 
@@ -150,6 +105,7 @@ class PastaMakerEngine(object):
                 cache = self.get_cache_for_pull(current_branch, incoming_pull)
                 cache = dict((k, v) for k, v in cache.items()
                              if k.startswith("pastamaker_"))
+                cache.pop("pastamaker_weight", None)
                 if event_type == "status":
                     cache.pop("pastamaker_ci_statuses", None)
                     cache.pop("pastamaker_travis_state", None)
@@ -337,3 +293,48 @@ class PastaMakerEngine(object):
         raw_queues = [p.jsonify() for p in pulls]
         self.set_cache_queues(branch, raw_queues)
         return pulls
+
+    def _get_logprefix(self, branch="<unknown>"):
+        return (self._u.login + "/" + self._r.name +
+                "/pull/XXX@" + branch + " (-)")
+
+    def log_formated_event(self, event_type, incoming_pull, data):
+        if event_type == "pull_request":
+            p_info = incoming_pull.pretty()
+            extra = ", action: %s" % data["action"]
+
+        elif event_type == "pull_request_review":
+            p_info = incoming_pull.pretty()
+            extra = ", action: %s, review-state: %s" % (
+                data["action"], data["review"]["state"])
+
+        elif event_type == "pull_request_review_comment":
+            p_info = incoming_pull.pretty()
+            extra = ", action: %s, review-state: %s" % (
+                data["action"], data["comment"]["position"])
+
+        elif event_type == "status":
+            if incoming_pull:
+                p_info = incoming_pull.pretty()
+            else:
+                p_info = self._get_logprefix()
+            extra = ", ci-status: %s, sha: %s" % (data["state"], data["sha"])
+
+        elif event_type == "refresh":
+            if incoming_pull:
+                p_info = incoming_pull.pretty()
+            else:
+                p_info = self._get_logprefix(data["refresh_ref"])
+            extra = ""
+        else:
+            if incoming_pull:
+                p_info = incoming_pull.pretty()
+            else:
+                p_info = self._get_logprefix()
+            extra = ", ignored"
+
+        rate = self._g.get_rate_limit().rate
+        LOG.info("***********************************************************")
+        LOG.info("%s ratelimit: %s/%s, reset at %s", p_info,
+                 rate.remaining, rate.limit, rate.reset)
+        LOG.info("%s received event '%s'%s", p_info, event_type, extra)
