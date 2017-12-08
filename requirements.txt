@@ -13,3 +13,4 @@ gevent
 lz4
 mock
 futures
+rq-dashboard
