@@ -104,11 +104,11 @@
         <tr ng-if="pull.open_comments_row">
             <td colspan="11">
                 <a href="#" class="pull-right" ng-click="toggle_comments_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
-                <ul>
-                  <li ng-repeat="comment in pull.pastamaker_comments">
-                      <a href="{{ comment.user.html_url }}" target="_blank" title="{{ comment.user.login }}"><img ng-src="{{ comment.user.avatar_url }}" class="avatar" alt="{{ comment.user.login }}"></a> {{ comment.created_at}} | {{comment.state }} | {{ comment.body }}
-                  </li>
-                </ul>
+                <div ng-repeat="comment in pull.pastamaker_comments | filter: CommentFilter">
+                    <a href="{{ comment.user.html_url }}" target="_blank" title="{{ comment.user.login }}"><img ng-src="{{ comment.user.avatar_url }}" class="avatar" alt="{{ comment.user.login }}"></a>
+                    <time am-time-ago="comment.created_at"></time>, {{ comment.state | lowercase }} <br />
+                    <pre style="overflow-x: auto;  overflow-wrap: normal; white-space: pre;">{{ comment.body }}</pre>
+                </div>
             </td>
         </tr>
         <tr ng-if="pull.open_commits_row">
@@ -137,7 +137,7 @@
                 </a>
                 <a href="{{ pull.pastamaker_travis_url }}" target="_blank" title="state: {{ pull.pastamaker_travis_detail.state }}">
                     <strong style="display:inline-block; width: 67px" ng-class="{maybe: ['pending', 'unknown'].indexOf(pull.pastamaker_travis_state) !== -1, good: pull.pastamaker_travis_state == 'success', bad: ['failure', 'error'].indexOf(pull.pastamaker_travis_state) !== -1}">#{{ pull.pastamaker_travis_detail.number }}</strong>
-                    <i>{{ pull.pastamaker_travis_detail.job_ids.length }} jobs started <time am-time-ago="pull.pastamaker_travis_detail.started_at" /></i>
+                    <i>{{ pull.pastamaker_travis_detail.job_ids.length }} jobs started <time am-time-ago="pull.pastamaker_travis_detail.started_at"></time></i>
                 </a>
                 <div ng-repeat="job in pull.pastamaker_travis_detail.jobs | orderBy: JobSorter" title="{{ job.state }} / {{ job.status }}" style="padding-left: 7px">
                     <span ng-if="job.state == 'received'" class="maybe glyphicon glyphicon-option-horizontal"></span>

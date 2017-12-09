@@ -54,6 +54,7 @@ app.classy.controller({
             }.bind(this)).error(this.on_error);
         },
         update_pull_requests: function(data) {
+
             var old_travis_tabs = this.opened_travis_tabs;
             var old_commits_tabs = this.opened_commits_tabs;
             var old_comments_tabs = this.opened_comments_tabs;
@@ -63,9 +64,10 @@ app.classy.controller({
             this.$scope.groups = []
             data.forEach(function(group) {
 
+                var comment_read_to_keep = [];
+                var repo;
                 // reopen tabs
                 group.pulls.forEach(function(pull) {
-                    var repo = pull.base.repo.full_name;
                     if (old_travis_tabs.hasOwnProperty(repo)){
                         if (old_travis_tabs[repo].indexOf(pull.number) !== -1) {
                             this.toggle_travis_info(pull);
@@ -81,7 +83,18 @@ app.classy.controller({
                             this.toggle_comments_info(pull);
                         }
                     }
+                    var cache_key = "comment~" + repo + "~" + pull.number;
+                    pull.comment_read = window.localStorage.getItem(cache_key);
+                    comment_read_to_keep.push(cache_key);
                 }.bind(this));
+
+                if (group.pulls.length > 0){
+                    for (var k in window.localStorage) {
+                        if (k.startsWith("comment~" + repo + "~") && ! (k in comment_read_to_keep)) {
+                            window.localStorage.removeImte(k);
+                        }
+                    }
+                }
 
                 this.$scope.groups.push(group)
             }.bind(this));
@@ -124,6 +137,7 @@ app.classy.controller({
                 pull.open_comments_row = true;
             } else {
                 pull.open_comments_row = false;
+                window.localStorage.setItem("comment~" + repo + "~" + pull.number, pull.comments);
                 this.opened_comments_tabs[repo] = this.opened_comments_tabs[repo].filter(e => e !== pull.number)
             }
         },
@@ -189,6 +203,13 @@ app.classy.controller({
         JobSorter: function(job){
             return parseInt(job.number.replace(".", ""));
         },
+        CommentFilter: function(comment, index, comments) {
+            if (comment.body.startsWith("Pull-request updated, HEAD is now"))
+                return false;
+            if (comment.state === "COMMENTED")
+                return false;
+            return true;
+        }
     },
 });
 
