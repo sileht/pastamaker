@@ -17,7 +17,9 @@
 
 import logging
 import re
+import sys
 
+import mock
 import requests
 
 from pastamaker import config
@@ -121,8 +123,6 @@ def web_github_update_branch(p):
 
 
 if __name__ == '__main__':
-    import sys
-    import mock
     url = sys.argv[1]
     p = mock.Mock(number=int(url.split("/")[-1]), html_url=url)
     print(web_github_update_branch(p))
