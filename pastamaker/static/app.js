@@ -2,13 +2,15 @@ angular.module('triage', [
     'ngRoute',
     'triage.controllers',
     'angularMoment',
+    'ng-showdown',
     'classy'
 ])
 
-.config(['$routeProvider', '$locationProvider', function ($routeProvider, $locationProvider) {
+.config(['$routeProvider', '$locationProvider', '$showdownProvider', function ($routeProvider, $locationProvider, $showdownProvider) {
     $locationProvider.html5Mode(true);
+    $showdownProvider.setOption('flavor', 'github');
     $routeProvider.when('/', {
-        templateUrl: "/static/partials/table.html",
+        templateUrl: "/static/table.html",
         controller: 'PullsController'
     });
 }])

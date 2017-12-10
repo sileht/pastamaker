@@ -107,7 +107,8 @@
                 <div ng-repeat="comment in pull.pastamaker_comments | filter: CommentFilter">
                     <a href="{{ comment.user.html_url }}" target="_blank" title="{{ comment.user.login }}"><img ng-src="{{ comment.user.avatar_url }}" class="avatar" alt="{{ comment.user.login }}"></a>
                     <time am-time-ago="comment.created_at"></time>, {{ comment.state | lowercase }} <br />
-                    <pre style="overflow-x: auto;  overflow-wrap: normal; white-space: pre;">{{ comment.body }}</pre>
+                    <div markdown-to-html="comment.body"></div>
+                    <hr />
                 </div>
             </td>
         </tr>
