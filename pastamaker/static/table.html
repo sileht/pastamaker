@@ -103,12 +103,15 @@
         </tr>
         <tr ng-if="pull.open_comments_row">
             <td colspan="11">
-                <a href="#" class="pull-right" ng-click="toggle_comments_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
-                <div ng-repeat="comment in pull.pastamaker_comments | filter: CommentFilter">
-                    <a href="{{ comment.user.html_url }}" target="_blank" title="{{ comment.user.login }}"><img ng-src="{{ comment.user.avatar_url }}" class="avatar" alt="{{ comment.user.login }}"></a>
-                    <time am-time-ago="comment.created_at"></time>, {{ comment.state | lowercase }} <br />
-                    <div markdown-to-html="comment.body"></div>
-                    <hr />
+                <div  style="max-height:450px; overflow: scroll;">
+                    <a href="#" class="pull-right" ng-click="toggle_comments_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
+                    <div ng-repeat="comment in filtered_comments = (pull.pastamaker_comments | filter: CommentFilter | orderBy:'$index':true)">
+                        <a href="{{ comment.user.html_url }}" target="_blank" title="{{ comment.user.login }}"><img ng-src="{{ comment.user.avatar_url }}" class="avatar" alt="{{ comment.user.login }}"></a>
+                        <time am-time-ago="comment.created_at"></time>, {{ comment.state | lowercase }},
+                        <span ng-if="comment.path"><i><a href="{{ pull.html_url }}/files#r{{ comment.id }}" target="_blank">{{ comment.path }}</a></i></span>
+                        <pre ng-if="comment.diff_hunk">{{ comment.diff_hunk | SelectLines:comment.original_position:3 }}</pre>
+                        <div class="comment-body" ng-if="comment.body" markdown-to-html="comment.body"></div>
+                    </div>
                 </div>
             </td>
         </tr>
@@ -123,6 +126,7 @@
                     </li>
                 </ul>
             </td>
+             <td class="state"><a href="#" ng-click="toggle_comments_info(pull)">{{ filtered_comments.length }} !</a></td>
         </tr>
         <tr ng-repeat-end ng-if="pull.open_travis_row">
             <td colspan="11">

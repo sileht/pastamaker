@@ -204,11 +204,13 @@ app.classy.controller({
             return parseInt(job.number.replace(".", ""));
         },
         CommentFilter: function(comment, index, comments) {
-            if (comment.body.startsWith("Pull-request updated, HEAD is now"))
+            if (comment.body.startsWith("Pull-request updated, HEAD is now")
+                || comment.user.login === "pastamaker[bot]"
+                || comment.state === "COMMENTED") {
                 return false;
-            if (comment.state === "COMMENTED")
-                return false;
-            return true;
+            } else {
+                return true;
+            }
         }
     },
 });
@@ -216,5 +218,17 @@ app.classy.controller({
 app.filter("GetCommitTitle", function(){
     return function(commit) {
         return commit.commit.message.split("\n")[0];
+    }
+});
+
+app.filter("SelectLines", function(){
+    return function(text, pos, len) {
+        var lines = text.split("\n");
+        lines =  lines.slice(pos-len, pos+len)
+        if (lines.length <= 0){
+            return text;
+        } else {
+            return lines.join("\n");
+        }
     }
 });

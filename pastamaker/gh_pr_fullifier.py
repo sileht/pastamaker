@@ -197,9 +197,8 @@ def compute_comments(pull, **extra):
         if "state" not in c:
             c["state"] = "COMMENT"
 
-    return [c for c in sorted(raw_comments,
-                              key=operator.itemgetter("created_at"))
-            if c["user"]["login"] != "pastamaker[bot]"]
+    return [c for c in sorted(
+        raw_comments, key=operator.itemgetter("created_at"))]
 
 
 # Order matter, some method need result of some other

@@ -117,6 +117,12 @@ td.labels strong {
   font-style:normal
 }
 
+.comment-body {
+    padding-left: 30px;
+    border-bottom: 1px solid #CCCCCC;
+    margin-bottom: 6px;
+}
+
 .octicon {
     font: 16px/1 octicons;
     display: inline-block;
