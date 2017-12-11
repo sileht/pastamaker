@@ -22,7 +22,7 @@
     </small></i>
 </div>
 <div ng-repeat="group in groups | orderBy:'updated_at':true" class="group">
-    <table class="table table-condensed table-hover multiple">
+    <table class="table table-condensed multiple">
      <thead>
      <tr>
          <th class="title">
@@ -105,12 +105,14 @@
             <td colspan="11">
                 <div  style="max-height:450px; overflow: scroll;">
                     <a href="#" class="pull-right" ng-click="toggle_comments_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
-                    <div ng-repeat="comment in pull.pastamaker_comments_filtered | orderBy:'$index':true">
-                        <a href="{{ comment.user.html_url }}" target="_blank" title="{{ comment.user.login }}"><img ng-src="{{ comment.user.avatar_url }}" class="avatar" alt="{{ comment.user.login }}"></a>
-                        <time am-time-ago="comment.created_at"></time>, {{ comment.state | lowercase }},
-                        <span ng-if="comment.path"><i><a href="{{ pull.html_url }}/files#r{{ comment.id }}" target="_blank">{{ comment.path }}</a></i></span>
-                        <pre class="comment-body" ng-if="comment.diff_hunk">{{ comment.diff_hunk | SelectLines:comment.original_position:3 }}</pre>
-                        <div class="comment-body" ng-if="comment.body" markdown-to-html="comment.body"></div>
+                    <div class="bs-callout bs-callout-default" ng-repeat="comment in pull.pastamaker_comments_filtered | orderBy:'$index':true">
+                        <h5>
+                            <a href="{{ comment.user.html_url }}" target="_blank" title="{{ comment.user.login }}"><img ng-src="{{ comment.user.avatar_url }}" class="avatar" alt="{{ comment.user.login }}"></a>
+                            <b>{{ comment.user.login }}</b> commented <time am-time-ago="comment.created_at"></time>
+                            <span ng-if="comment.path" class="text-muted">| <a href="{{ pull.html_url }}/files#r{{ comment.id }}" target="_blank">{{ comment.path }}</a></span>
+                        </h4>
+                        <pre ng-if="comment.diff_hunk">{{ comment.diff_hunk | SelectLines:comment.original_position:3 }}</pre>
+                        <div ng-if="comment.body" markdown-to-html="comment.body"></div>
                     </div>
                 </div>
             </td>
