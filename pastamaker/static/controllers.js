@@ -25,13 +25,13 @@ app.classy.controller({
             console.log("event enabled");
             this.$scope.event = true;
             var source = new EventSource('/status/stream');
-            source.addEventListener("ping", function(event) {
+            source.addEventListener("ping", (event) => {
                 // Just for testing the connection for heroku
             }, false);
-            source.addEventListener("refresh", function(event) {
+            source.addEventListener("refresh", (event) => {
                 this.update_pull_requests(JSON.parse(event.data));
                 this.$scope.$apply()
-            }.bind(this), false);
+            }, false);
         } else {
             this.refresh();
             if (this.$location.search().autorefresh === "true"){
@@ -49,9 +49,9 @@ app.classy.controller({
         refresh: function() {
             console.log("refreshing");
             this.$scope.refreshing = true;
-            this.$http.get('/status').success(function(data, status, headers) {
+            this.$http.get('/status').success((data, status, headers) => {
                 this.update_pull_requests(data);
-            }.bind(this)).error(this.on_error);
+            }).error(this.on_error);
         },
         update_pull_requests: function(data) {
 
@@ -62,12 +62,12 @@ app.classy.controller({
             this.opened_commits_tabs = {};
             this.opened_comments_tabs = {};
             this.$scope.groups = []
-            data.forEach(function(group) {
+            data.forEach((group) => {
 
                 var comments_read_to_keep = [];
                 var repo;
 
-                group.pulls.forEach(function(pull) {
+                group.pulls.forEach((pull) => {
                     // reopen tabs
                     repo = pull.base.repo.full_name;
                     if (old_travis_tabs.hasOwnProperty(repo)){
@@ -92,7 +92,7 @@ app.classy.controller({
                     var cache_key = "comment~" + repo + "~" + pull.number;
                     pull.pastamaker_comments_read = window.localStorage.getItem(cache_key);
                     comments_read_to_keep.push(cache_key);
-                }.bind(this));
+                });
 
                 if (group.pulls.length > 0){
                     for (var k in window.localStorage) {
@@ -103,7 +103,7 @@ app.classy.controller({
                 }
 
                 this.$scope.groups.push(group)
-            }.bind(this));
+            });
             this.$scope.last_update = new Date();
             this.$scope.refreshing = false;
             this.$scope.counter = this.refresh_interval;
@@ -114,8 +114,8 @@ app.classy.controller({
             this.$scope.counter = this.refresh_interval;
         },
         hide_all_tabs: function() {
-            this.$scope.groups.forEach(function(group) {
-                group.pulls.forEach(function(pull) {
+            this.$scope.groups.forEach((group) => {
+                group.pulls.forEach((pull) => {
                     var repo = pull.base.repo.full_name;
                     pull.open_travis_row = false;
                     if (this.opened_travis_tabs.hasOwnProperty(repo)){
@@ -129,8 +129,8 @@ app.classy.controller({
                     if (this.opened_comments_tabs.hasOwnProperty(repo)){
                         this.opened_comments_tabs[repo] = this.opened_comments_tabs[repo].filter(e => e !== pull.number)
                     }
-                }.bind(this));
-            }.bind(this));
+                });
+            });
         },
         toggle_comments_info: function(pull) {
             var opened = pull.open_comments_row;
@@ -185,11 +185,11 @@ app.classy.controller({
             var travis_base_url = 'https://api.travis-ci.org'
             this.$http.get(travis_base_url + "/builds/" + build_id,
                            {headers: v2_headers}
-            ).success(function(data, status, headers) {
+            ).success((data, status, headers) => {
                 pull.pastamaker_travis_detail = data.build;
                 pull.pastamaker_travis_detail.resume_state = pull.pastamaker_travis_state;
                 pull.pastamaker_travis_detail.jobs = [];
-                data.build.job_ids.forEach(function(job_id) {
+                data.build.job_ids.forEach((job_id) => {
                     this.$http.get(travis_base_url + "/jobs/" + job_id,
                                    {headers: v2_headers}
                     ).success(function(data, status, headers) {
@@ -197,16 +197,16 @@ app.classy.controller({
                             pull.pastamaker_travis_detail.resume_state = "working";
                         }
                         pull.pastamaker_travis_detail.jobs.push(data.job);
-                    }.bind(this));
-                }.bind(this))
-            }.bind(this));
+                    });
+                })
+            });
         },
         open_all_commits: function(pull){
-            pull.pastamaker_commits.forEach(function(commit) {
+            pull.pastamaker_commits.forEach((commit) => {
                 var url = "https://github.com/" + pull.base.repo.full_name +
                     "/pull/" + pull.number + "/commits/" + commit.sha;
                 this.$window.open(url, commit.sha);
-            }.bind(this));
+            });
         },
         JobSorter: function(job){
             return parseInt(job.number.replace(".", ""));
