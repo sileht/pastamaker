@@ -49,7 +49,7 @@
                  <a href="#" ng-click="toggle_commits_info(pull)" style="display:inline-block;padding-left:5px;"><span ng-class="{'glyphicon glyphicon-circle-arrow-down': pull.open_commits_row, 'glyphicon glyphicon-circle-arrow-right': !pull.open_commits_row}"></a>
                  <a href="{{ pull.html_url }}" target="_blank">{{ pull.title }} <span style="color:grey">#{{ pull.number }}</span></a>
              </td>
-             <td class="state"><a href="#" ng-click="toggle_comments_info(pull)">{{ pull.comments }}/{{ (pull.pastamaker_comments | filter: CommentFilter | orderBy:'$index':true).length }}</a></td>
+             <td class="state"><a href="#" ng-click="toggle_comments_info(pull)">{{ pull.pastamaker_comments_filtered.length }}/{{ pull.pastamaker_comments_filtered.length - pull.pastamaker_comments_read.length }}</a></td>
              <td class="state"><a href="{{ pull.html_url }}/commits" target="_blank">{{ pull.commits }}</a></td>
              <td class="state"><a href="{{ pull.html_url }}/files" target="_blank">{{ pull.changed_files }}</a></td>
              <td class="last-updated"><time am-time-ago="pull.updated_at"></time></td>
@@ -105,11 +105,11 @@
             <td colspan="11">
                 <div  style="max-height:450px; overflow: scroll;">
                     <a href="#" class="pull-right" ng-click="toggle_comments_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
-                    <div ng-repeat="comment in pull.pastamaker_comments | filter: CommentFilter | orderBy:'$index':true as filtered_comments">
+                    <div ng-repeat="comment in pull.pastamaker_comments_filtered | orderBy:'$index':true">
                         <a href="{{ comment.user.html_url }}" target="_blank" title="{{ comment.user.login }}"><img ng-src="{{ comment.user.avatar_url }}" class="avatar" alt="{{ comment.user.login }}"></a>
                         <time am-time-ago="comment.created_at"></time>, {{ comment.state | lowercase }},
                         <span ng-if="comment.path"><i><a href="{{ pull.html_url }}/files#r{{ comment.id }}" target="_blank">{{ comment.path }}</a></i></span>
-                        <pre ng-if="comment.diff_hunk">{{ comment.diff_hunk | SelectLines:comment.original_position:3 }}</pre>
+                        <pre class="comment-body" ng-if="comment.diff_hunk">{{ comment.diff_hunk | SelectLines:comment.original_position:3 }}</pre>
                         <div class="comment-body" ng-if="comment.body" markdown-to-html="comment.body"></div>
                     </div>
                 </div>

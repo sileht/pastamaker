@@ -118,8 +118,8 @@ td.labels strong {
 }
 
 .comment-body {
-    padding-left: 30px;
     border-bottom: 1px solid #CCCCCC;
+    margin-left: 30px;
     margin-bottom: 6px;
 }
 

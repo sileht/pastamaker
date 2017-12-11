@@ -64,12 +64,12 @@ app.classy.controller({
             this.$scope.groups = []
             data.forEach(function(group) {
 
-//                var comment_read_to_keep = [];
-//                var repo;
+                var comments_read_to_keep = [];
+                var repo;
 
-                // reopen tabs
                 group.pulls.forEach(function(pull) {
-                    var repo = pull.base.repo.full_name;
+                    // reopen tabs
+                    repo = pull.base.repo.full_name;
                     if (old_travis_tabs.hasOwnProperty(repo)){
                         if (old_travis_tabs[repo].indexOf(pull.number) !== -1) {
                             this.toggle_travis_info(pull);
@@ -85,18 +85,22 @@ app.classy.controller({
                             this.toggle_comments_info(pull);
                         }
                     }
-//                    var cache_key = "comment~" + repo + "~" + pull.number;
-//                    pull.comment_read = window.localStorage.getItem(cache_key);
-//                    comment_read_to_keep.push(cache_key);
+
+                    // prepare filtred comments
+                    pull.pastamaker_comments_filtered = this.filter_comments(pull.pastamaker_comments);
+
+                    var cache_key = "comment~" + repo + "~" + pull.number;
+                    pull.pastamaker_comments_read = window.localStorage.getItem(cache_key);
+                    comments_read_to_keep.push(cache_key);
                 }.bind(this));
 
-//                if (group.pulls.length > 0){
-//                    for (var k in window.localStorage) {
-//                        if (k.startsWith("comment~" + repo + "~") && ! (k in comment_read_to_keep)) {
-//                            window.localStorage.removeImte(k);
-//                        }
-//                    }
-//                }
+                if (group.pulls.length > 0){
+                    for (var k in window.localStorage) {
+                        if (k.startsWith("comment~" + repo + "~") && ! (k in comments_read_to_keep)) {
+                            window.localStorage.removeItem(k);
+                        }
+                    }
+                }
 
                 this.$scope.groups.push(group)
             }.bind(this));
@@ -131,15 +135,17 @@ app.classy.controller({
         toggle_comments_info: function(pull) {
             var opened = pull.open_comments_row;
             var repo = pull.base.repo.full_name;
+            var cache_key = "comment~" + repo + "~" + pull.number;
             if (!opened) {
                 if (!this.opened_comments_tabs.hasOwnProperty(repo)){
                     this.opened_comments_tabs[repo] = [];
                 }
                 this.opened_comments_tabs[repo].push(pull.number);
                 pull.open_comments_row = true;
+                pull.pastamaker_comments_read = pull.pastamaker_comments_filtered;
+                window.localStorage.setItem(cache_key, pull.pastamaker_comments_read);
             } else {
                 pull.open_comments_row = false;
-                // window.localStorage.setItem("comment~" + repo + "~" + pull.number, pull.comments);
                 this.opened_comments_tabs[repo] = this.opened_comments_tabs[repo].filter(e => e !== pull.number)
             }
         },
@@ -205,14 +211,16 @@ app.classy.controller({
         JobSorter: function(job){
             return parseInt(job.number.replace(".", ""));
         },
-        CommentFilter: function(comment, index, comments) {
-            if (comment.body.startsWith("Pull-request updated, HEAD is now")
-                || comment.user.login === "pastamaker[bot]"
-                || comment.state !== "COMMENT") {
-                return false;
-            } else {
-                return true;
-            }
+        filter_comments: function(comments) {
+            var filtered_comments = []
+            comments.forEach((comment) => {
+                if (!comment.body.startsWith("Pull-request updated, HEAD is now")
+                    && comment.user.login !== "pastamaker[bot]"
+                    && comment.state === "COMMENT") {
+                    filtered_comments.push(comment)
+                }
+            });
+            return filtered_comments;
         }
     },
 });
