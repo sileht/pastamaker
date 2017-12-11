@@ -49,7 +49,7 @@
                  <a href="#" ng-click="toggle_commits_info(pull)" style="display:inline-block;padding-left:5px;"><span ng-class="{'glyphicon glyphicon-circle-arrow-down': pull.open_commits_row, 'glyphicon glyphicon-circle-arrow-right': !pull.open_commits_row}"></a>
                  <a href="{{ pull.html_url }}" target="_blank">{{ pull.title }} <span style="color:grey">#{{ pull.number }}</span></a>
              </td>
-             <td class="state"><a href="#" ng-click="toggle_comments_info(pull)">{{ pull.pastamaker_comments_filtered.length }}/{{ pull.pastamaker_comments_filtered.length - pull.pastamaker_comments_read }}</a></td>
+             <td class="state"><a href="#" ng-click="toggle_comments_info(pull)">{{ pull.pastamaker_comments_filtered.length }}<sup ng-if="pull.pastamaker_comments_filtered.length - pull.pastamaker_comments_read > 0">{{ pull.pastamaker_comments_filtered.length - pull.pastamaker_comments_read }}</sup></a></td>
              <td class="state"><a href="{{ pull.html_url }}/commits" target="_blank">{{ pull.commits }}</a></td>
              <td class="state"><a href="{{ pull.html_url }}/files" target="_blank">{{ pull.changed_files }}</a></td>
              <td class="last-updated"><time am-time-ago="pull.updated_at"></time></td>
