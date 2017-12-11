@@ -206,7 +206,7 @@ app.classy.controller({
         CommentFilter: function(comment, index, comments) {
             if (comment.body.startsWith("Pull-request updated, HEAD is now")
                 || comment.user.login === "pastamaker[bot]"
-                || comment.state === "COMMENTED") {
+                || comment.state !== "COMMENT") {
                 return false;
             } else {
                 return true;
