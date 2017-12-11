@@ -58,13 +58,13 @@ app.classy.controller({
             var old_travis_tabs = this.opened_travis_tabs;
             var old_commits_tabs = this.opened_commits_tabs;
             var old_comments_tabs = this.opened_comments_tabs;
+            var comments_read_to_keep = [];
             this.opened_travis_tabs = {};
             this.opened_commits_tabs = {};
             this.opened_comments_tabs = {};
             this.$scope.groups = []
             data.forEach((group) => {
 
-                var comments_read_to_keep = [];
                 var repo;
 
                 group.pulls.forEach((pull) => {
@@ -90,23 +90,26 @@ app.classy.controller({
                     pull.pastamaker_comments_filtered = this.filter_comments(pull.pastamaker_comments);
 
                     var cache_key = "comment~" + repo + "~" + pull.number;
-                    pull.pastamaker_comments_read = window.localStorage.getItem(cache_key);
+                    pull.pastamaker_comments_read = this.$window.localStorage.getItem(cache_key);
+                    if (pull.pastamaker_comments_read == null){
+                        pull.pastamaker_comments_read = 0;
+                    } else {
+                        pull.pastamaker_comments_read = parseInt(pull.pastamaker_comments_read);
+                    }
                     comments_read_to_keep.push(cache_key);
                 });
-
-                if (group.pulls.length > 0){
-                    for (var k in window.localStorage) {
-                        if (k.startsWith("comment~" + repo + "~") && ! (k in comments_read_to_keep)) {
-                            window.localStorage.removeItem(k);
-                        }
-                    }
-                }
 
                 this.$scope.groups.push(group)
             });
             this.$scope.last_update = new Date();
             this.$scope.refreshing = false;
             this.$scope.counter = this.refresh_interval;
+
+            for (var k in this.$window.localStorage) {
+                if (!comments_read_to_keep.includes(k)) {
+                    this.$window.localStorage.removeItem(k);
+                }
+            }
         },
         on_error: function(data, status) {
             console.warn(data, status);
@@ -142,8 +145,8 @@ app.classy.controller({
                 }
                 this.opened_comments_tabs[repo].push(pull.number);
                 pull.open_comments_row = true;
-                pull.pastamaker_comments_read = pull.pastamaker_comments_filtered;
-                window.localStorage.setItem(cache_key, pull.pastamaker_comments_read);
+                pull.pastamaker_comments_read = pull.pastamaker_comments_filtered.length;
+                this.$window.localStorage.setItem(cache_key, pull.pastamaker_comments_read.toString());
             } else {
                 pull.open_comments_row = false;
                 this.opened_comments_tabs[repo] = this.opened_comments_tabs[repo].filter(e => e !== pull.number)
