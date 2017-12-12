@@ -81,6 +81,10 @@ class PastaMakerEngine(object):
             LOG.info("No need to proceed queue (unwanted event_type)")
             return
 
+        if event_type == "status" and incoming_pull.head.sha != data["sha"]:
+            LOG.info("No need to proceed queue (got status of an old commit)")
+            return
+
         # We don't care about *labeled/*assigned/review_request*/edited
         if (event_type == "pull_request" and data["action"] not in [
                 "opened", "reopened", "closed", "synchronize"]):
