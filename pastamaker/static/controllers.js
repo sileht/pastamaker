@@ -54,10 +54,9 @@ app.classy.controller({
             }).error(this.on_error);
         },
         update_pull_requests: function(data) {
-
-            var old_travis_tabs = this.opened_travis_tabs;
-            var old_commits_tabs = this.opened_commits_tabs;
-            var old_comments_tabs = this.opened_comments_tabs;
+            var old_tabs = {"travis": this.opened_travis_tabs,
+                            "commits": this.opened_commits_tabs,
+                            "comments": this.opened_comments_tabs}
             var comments_read_to_keep = [];
             this.opened_travis_tabs = {};
             this.opened_commits_tabs = {};
@@ -68,28 +67,17 @@ app.classy.controller({
                 var repo;
 
                 group.pulls.forEach((pull) => {
-                    // reopen tabs
                     repo = pull.base.repo.full_name;
-                    if (old_travis_tabs.hasOwnProperty(repo)){
-                        if (old_travis_tabs[repo].indexOf(pull.number) !== -1) {
-                            this.toggle_travis_info(pull);
+                    ["travis", "commits", "comments"].forEach((type) => {
+                        var tabs = old_tabs[type];
+                        if (tabs.hasOwnProperty(repo) && tabs[repo].includes(pull.number)) {
+                            this.open_info(pull, type);
                         }
-                    }
-                    if (old_commits_tabs.hasOwnProperty(repo)){
-                        if (old_commits_tabs[repo].indexOf(pull.number) !== -1) {
-                            this.toggle_commits_info(pull);
-                        }
-                    }
-                    if (old_comments_tabs.hasOwnProperty(repo)){
-                        if (old_comments_tabs[repo].indexOf(pull.number) !== -1) {
-                            this.toggle_comments_info(pull);
-                        }
-                    }
+                    });
 
-                    // prepare filtred comments
+                    // helper for filtered comments
+                    var cache_key = this.get_comments_read_cache_key(pull)
                     pull.pastamaker_comments_filtered = this.filter_comments(pull.pastamaker_comments);
-
-                    var cache_key = "comment~" + repo + "~" + pull.number;
                     pull.pastamaker_comments_read = this.$window.localStorage.getItem(cache_key);
                     if (pull.pastamaker_comments_read == null){
                         pull.pastamaker_comments_read = 0;
@@ -119,67 +107,49 @@ app.classy.controller({
         hide_all_tabs: function() {
             this.$scope.groups.forEach((group) => {
                 group.pulls.forEach((pull) => {
-                    var repo = pull.base.repo.full_name;
-                    pull.open_travis_row = false;
-                    if (this.opened_travis_tabs.hasOwnProperty(repo)){
-                        this.opened_travis_tabs[repo] = this.opened_travis_tabs[repo].filter(e => e !== pull.number)
-                    }
-                    pull.open_commits_row = false;
-                    if (this.opened_commits_tabs.hasOwnProperty(repo)){
-                        this.opened_commits_tabs[repo] = this.opened_commits_tabs[repo].filter(e => e !== pull.number)
-                    }
-                    pull.open_comments_row = false;
-                    if (this.opened_comments_tabs.hasOwnProperty(repo)){
-                        this.opened_comments_tabs[repo] = this.opened_comments_tabs[repo].filter(e => e !== pull.number)
-                    }
+                    this.close_info(pull, "travis");
+                    this.close_info(pull, "commits");
+                    this.close_info(pull, "comments");
                 });
             });
         },
-        toggle_comments_info: function(pull) {
-            var opened = pull.open_comments_row;
-            var repo = pull.base.repo.full_name;
-            var cache_key = "comment~" + repo + "~" + pull.number;
-            if (!opened) {
-                if (!this.opened_comments_tabs.hasOwnProperty(repo)){
-                    this.opened_comments_tabs[repo] = [];
+        get_comments_read_cache_key: function(pull){
+            return "comment~" + pull.base.repo.full_name + "~" + pull.number;
+        },
+        toggle_info: function(pull, type) {
+            var open = pull["open_" + type + "_row"];
+            this.close_info(pull, "commits");
+            this.close_info(pull, "comments");
+            this.close_info(pull, "travis");
+            if (!open) {
+                this.open_info(pull, type);
+
+                if (type === "comments") {
+                    pull.pastamaker_comments_read = pull.pastamaker_comments_filtered.length;
+                    this.$window.localStorage.setItem(
+                        this.get_comments_read_cache_key(pull),
+                        pull.pastamaker_comments_read.toString()
+                    );
                 }
-                this.opened_comments_tabs[repo].push(pull.number);
-                pull.open_comments_row = true;
-                pull.pastamaker_comments_read = pull.pastamaker_comments_filtered.length;
-                this.$window.localStorage.setItem(cache_key, pull.pastamaker_comments_read.toString());
-            } else {
-                pull.open_comments_row = false;
-                this.opened_comments_tabs[repo] = this.opened_comments_tabs[repo].filter(e => e !== pull.number)
             }
         },
-        toggle_commits_info: function(pull) {
-            var opened = pull.open_commits_row;
-            var repo = pull.base.repo.full_name;
-            if (!opened) {
-                if (!this.opened_commits_tabs.hasOwnProperty(repo)){
-                    this.opened_commits_tabs[repo] = [];
-                }
-                this.opened_commits_tabs[repo].push(pull.number);
-                pull.open_commits_row = true;
-            } else {
-                pull.open_commits_row = false;
-                this.opened_commits_tabs[repo] = this.opened_commits_tabs[repo].filter(e => e !== pull.number)
-            }
-        },
-        toggle_travis_info: function(pull) {
-            var opened = pull.open_travis_row;
+        open_info: function(pull, type) {
             var repo = pull.base.repo.full_name
-            if (!opened) {
-                if (!this.opened_travis_tabs.hasOwnProperty(repo)){
-                    this.opened_travis_tabs[repo] = [];
-                }
-                this.opened_travis_tabs[repo].push(pull.number);
-                pull.open_travis_row = true;
-                // this.refresh_travis(pull);
-            } else {
-                pull.open_travis_row = false;
-                this.opened_travis_tabs[repo] = this.opened_travis_tabs[repo].filter(e => e !== pull.number)
+            var tab = "opened_" + type + "_tabs";
+            if (!this[tab].hasOwnProperty(repo)){
+                this[tab][repo] = [];
             }
+            this[tab][repo].push(pull.number)
+            pull["open_" + type + "_row"] = true;
+        },
+        close_info: function(pull, type) {
+            var repo = pull.base.repo.full_tab
+            var tab = "opened_" + type + "_tabs";
+            if (!this[tab].hasOwnProperty(repo)){
+                this[tab][repo] = [];
+            }
+            this[tab][repo] = this[tab][repo].filter(e => e !== pull.number);
+            pull["open_" + type + "_row"] = false;
         },
         refresh_travis: function(pull) {
             pull.pastamaker_travis_detail = undefined;

@@ -46,15 +46,15 @@
              <td class="title">
                  <div class="pull-right"><span style="color:green">+{{ pull.additions }}</span> / <span style="color:red">-{{ pull.deletions }}</span></div>
                  <a href="{{ pull.user.html_url }}"><img ng-src="{{ pull.user.avatar_url }}" class="avatar" alt="{{ pull.user.login }}"></a>
-                 <a href="#" ng-click="toggle_commits_info(pull)" style="display:inline-block;padding-left:5px;"><span ng-class="{'glyphicon glyphicon-circle-arrow-down': pull.open_commits_row, 'glyphicon glyphicon-circle-arrow-right': !pull.open_commits_row}"></a>
+                 <a href="#" ng-click="toggle_info(pull, 'commits')" style="display:inline-block;padding-left:5px;"><span ng-class="{'glyphicon glyphicon-circle-arrow-down': pull.open_commits_row, 'glyphicon glyphicon-circle-arrow-right': !pull.open_commits_row}"></a>
                  <a href="{{ pull.html_url }}" target="_blank">{{ pull.title }} <span style="color:grey">#{{ pull.number }}</span></a>
              </td>
-             <td class="state"><a href="#" ng-click="toggle_comments_info(pull)">{{ pull.pastamaker_comments_filtered.length }}<sup ng-if="pull.pastamaker_comments_filtered.length - pull.pastamaker_comments_read > 0">{{ pull.pastamaker_comments_filtered.length - pull.pastamaker_comments_read }}</sup></a></td>
+             <td class="state"><a href="#" ng-click="toggle_info(pull, 'comments')">{{ pull.pastamaker_comments_filtered.length }}<sup ng-if="pull.pastamaker_comments_filtered.length - pull.pastamaker_comments_read > 0">{{ pull.pastamaker_comments_filtered.length - pull.pastamaker_comments_read }}</sup></a></td>
              <td class="state"><a href="{{ pull.html_url }}/commits" target="_blank">{{ pull.commits }}</a></td>
              <td class="state"><a href="{{ pull.html_url }}/files" target="_blank">{{ pull.changed_files }}</a></td>
              <td class="last-updated"><time am-time-ago="pull.updated_at"></time></td>
              <td class="state" ng-if="pull.pastamaker_travis_detail != null">
-                 <a href="#" ng-click="toggle_travis_info(pull)">
+                 <a href="#" ng-click="toggle_info(pull, 'travis')">
                     <span ng-if="pull.pastamaker_travis_detail.resume_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
                     <span ng-if="pull.pastamaker_travis_detail.resume_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
                     <span ng-if="pull.pastamaker_travis_detail.resume_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
@@ -64,7 +64,7 @@
                  </a>
              </td>
              <td class="state" ng-if="pull.pastamaker_travis_detail == null">
-                 <a href="#" ng-click="toggle_travis_info(pull)">
+                 <a href="#" ng-click="toggle_info(pull, 'travis')">
                     <span ng-if="pull.pastamaker_travis_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
                     <span ng-if="pull.pastamaker_travis_state == 'failure'" title="Last test failed!" class="bad glyphicon glyphicon-remove"></span>
                     <span ng-if="pull.pastamaker_travis_state == 'error'" title="Last test error!" class="bad glyphicon glyphicon-remove"></span>
@@ -104,7 +104,7 @@
         <tr ng-if="pull.open_comments_row">
             <td colspan="11">
                 <div  style="max-height:450px; overflow: scroll;">
-                    <a href="#" class="pull-right" ng-click="toggle_comments_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
+                    <a href="#" class="pull-right" ng-click="toggle_info(pull, 'comments')"><span class="glyphicon glyphicon-remove"></span></a>
                     <div class="bs-callout bs-callout-default" ng-if="pull.pastamaker_comments_filtered.length == 0">
                         <h5>No comment yet</h5>
                     </div>
@@ -122,7 +122,7 @@
         </tr>
         <tr ng-if="pull.open_commits_row">
             <td colspan="11">
-                <a href="#" class="pull-right" ng-click="toggle_commits_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
+                <a href="#" class="pull-right" ng-click="toggle_info(pull, 'commits')"><span class="glyphicon glyphicon-remove"></span></a>
                 <a href="#" class="pull-right" style="margin-right:5px" ng-click="open_all_commits(pull)"><span class="glyphicon glyphicon-new-window"></span></a>
                 <ul style="padding-left: 70px;">
                     <li ng-repeat="commit in pull.pastamaker_commits">
@@ -131,11 +131,11 @@
                     </li>
                 </ul>
             </td>
-             <td class="state"><a href="#" ng-click="toggle_comments_info(pull)">{{ filtered_comments.length }} !</a></td>
+             <td class="state"><a href="#" ng-click="toggle_info(pull, 'comments')">{{ filtered_comments.length }} !</a></td>
         </tr>
         <tr ng-repeat-end ng-if="pull.open_travis_row">
             <td colspan="11">
-                <a href="#" class="pull-right" ng-click="toggle_travis_info(pull)"><span class="glyphicon glyphicon-remove"><span></a>
+                <a href="#" class="pull-right" ng-click="toggle_info(pull, 'travis')"><span class="glyphicon glyphicon-remove"><span></a>
                 <a href="#" class="pull-right" style="margin-right:5px" ng-click="refresh_travis(pull)"><span class="glyphicon glyphicon-refresh"></span></a>
                 <a href="{{ pull.pastamaker_travis_url }}" target="_blank" title="state: {{ pull.pastamaker_travis_detail.state }}">
                     <span ng-if="pull.pastamaker_travis_detail.resume_state == 'success'" title="Last test succeeded" class="good glyphicon glyphicon-ok"></span>
