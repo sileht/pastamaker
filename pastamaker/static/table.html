@@ -105,6 +105,9 @@
             <td colspan="11">
                 <div  style="max-height:450px; overflow: scroll;">
                     <a href="#" class="pull-right" ng-click="toggle_comments_info(pull)"><span class="glyphicon glyphicon-remove"></span></a>
+                    <div class="bs-callout bs-callout-default" ng-if="pull.pastamaker_comments_filtered.length == 0">
+                        <h5>No comment yet</h5>
+                    </div>
                     <div class="bs-callout bs-callout-default" ng-repeat="comment in pull.pastamaker_comments_filtered | orderBy:'$index':true">
                         <h5>
                             <a href="{{ comment.user.html_url }}" target="_blank" title="{{ comment.user.login }}"><img ng-src="{{ comment.user.avatar_url }}" class="avatar" alt="{{ comment.user.login }}"></a>
