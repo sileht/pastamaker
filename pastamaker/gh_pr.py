@@ -88,10 +88,17 @@ def pastamaker_travis_post_build_results(self):
         self.head.sha)]
     for i, job in enumerate(self.pastamaker["travis_detail"]["jobs"]):
         try:
-            message.append('- [%s](%s): %s' % (
+            state = job["state"].upper()
+            if state == "PASSED":
+                icon = " ✅"
+            elif state == "FAILED":
+                icon = " ❌"
+            else:
+                icon = ""
+            message.append('- [%s](%s): %s%s' % (
                 job["config"].get("env", "JOB #%d" % i),
                 job["log_url"],
-                job["state"].upper()
+                state, icon,
             ))
         except KeyError:
             LOG.error("%s, malformed travis job: %s",
