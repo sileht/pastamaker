@@ -90,12 +90,12 @@ def pastamaker_travis_post_build_results(self):
         try:
             state = job["state"].upper()
             if state == "PASSED":
-                icon = " ✅"
+                icon = u" ✅"
             elif state == "FAILED":
-                icon = " ❌"
+                icon = u" ❌"
             else:
-                icon = ""
-            message.append('- [%s](%s): %s%s' % (
+                icon = u""
+            message.append(u'- [%s](%s): %s%s' % (
                 job["config"].get("env", "JOB #%d" % i),
                 job["log_url"],
                 state, icon,
