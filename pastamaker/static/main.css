@@ -24,6 +24,10 @@ img.avatar {
 .maybe {
     color: orange;
 }
+.refreshing {
+    color: #0099cc;
+}
+
 footer {
     font-size: 70%;
 }
