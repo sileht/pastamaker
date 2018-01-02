@@ -134,8 +134,10 @@ app.classy.controller({
                         this.get_comments_read_cache_key(pull),
                         pull.pastamaker_comments_read.toString()
                     );
-                } else if (type === "comments") {
-                    this.refresh_travis(pull);
+                } else if (type === "travis") {
+                    if (["success", "failure", "error"].indexOf(pull.pastamaker_travis_state) === -1) {
+                        this.refresh_travis(pull);
+                    }
                 }
             }
         },
@@ -158,7 +160,7 @@ app.classy.controller({
             pull["open_" + type + "_row"] = false;
         },
         refresh_travis: function(pull) {
-            pull.pastamaker_travis_detail = undefined;
+            pull.pastamaker_travis_detail.refreshing = true;
             var build_id = pull.pastamaker_travis_url.split("?")[0].split("/").slice(-1)[0];
             var v2_headers = { "Accept": "application/vnd.travis-ci.2+json" };
             var travis_base_url = 'https://api.travis-ci.org';
@@ -167,19 +169,26 @@ app.classy.controller({
                 "url": travis_base_url + "/builds/" + build_id,
                 "headers": v2_headers,
             }).then((response) => {
-                pull.pastamaker_travis_detail = response.data.build;
-                pull.pastamaker_travis_detail.resume_state = pull.pastamaker_travis_state;
-                pull.pastamaker_travis_detail.jobs = [];
-                pull.pastamaker_travis_detail.job_ids.forEach((job_id) => {
+
+                var count_updated_job = 0;
+                var build = response.data.build;
+                build.resume_state = pull.pastamaker_travis_state;
+                build.jobs = [];
+                build.refreshing = false;
+                build.job_ids.forEach((job_id) => {
                     this.$http({
                         "method": "GET",
                         "url": travis_base_url + "/jobs/" + job_id,
                         "headers": v2_headers,
                     }).then((response) => {
                         if (pull.pastamaker_travis_state == "pending" && response.data.job.state == "started") {
-                            pull.pastamaker_travis_detail.resume_state = "working";
+                            build.resume_state = "working";
                         }
-                        pull.pastamaker_travis_detail.jobs.push(response.data.job);
+                        build.jobs.push(response.data.job);
+                        count_updated_job += 1;
+                        if (count_updated_job == build.job_ids.length){
+                            pull.pastamaker_travis_detail = build;
+                        }
                     });
                 })
             });
