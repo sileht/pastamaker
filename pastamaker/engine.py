@@ -114,7 +114,13 @@ class PastaMakerEngine(object):
                 cache = dict((k, v) for k, v in cache.items()
                              if k.startswith("pastamaker_"))
                 cache.pop("pastamaker_weight", None)
-                if event_type == "status":
+
+                if (event_type == "status" and
+                        data["state"] == cache["pastamaker_travis_state"]):
+                    LOG.info("No need to proceed queue (got status without "
+                             "state change '%s')" % data["state"])
+                    return
+                elif event_type == "status":
                     cache.pop("pastamaker_ci_statuses", None)
                     cache.pop("pastamaker_travis_state", None)
                     cache.pop("pastamaker_travis_url", None)

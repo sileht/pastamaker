@@ -134,6 +134,8 @@ app.classy.controller({
                         this.get_comments_read_cache_key(pull),
                         pull.pastamaker_comments_read.toString()
                     );
+                } else if (type === "comments") {
+                    this.refresh_travis(pull);
                 }
             }
         },
