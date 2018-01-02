@@ -176,8 +176,10 @@ def stream_message(_type, data):
 def stream_generate():
     r = get_redis()
     yield stream_message("refresh", _get_status(r))
+    yield stream_message("rq-refresh", get_queue().count)
     pubsub = r.pubsub()
     pubsub.subscribe("update")
+    pubsub.subscribe("rq-update")
     while True:
         # NOTE(sileht): heroku timeout is 55s, we have set gunicorn timeout to
         # 60s, this assume 5s is enough for http and redis round strip and use
@@ -187,6 +189,9 @@ def stream_generate():
             yield stream_message("ping", "{}")
         elif message["channel"] == "update":
             yield stream_message("refresh", _get_status(r))
+            yield stream_message("rq-refresh", get_queue().count)
+        elif message["channel"] == "rq-update":
+            yield stream_message("rq-refresh", get_queue().count)
 
 
 @app.route('/status/stream')
@@ -206,6 +211,7 @@ def event_handler():
     if event_type in ["refresh", "pull_request", "status",
                       "pull_request_review"]:
         get_queue().enqueue(worker.event_handler, event_type, data)
+        get_redis().publish("rq-update", "noop")
 
     if "repository" in data:
         repo_name = data["repository"]["full_name"]

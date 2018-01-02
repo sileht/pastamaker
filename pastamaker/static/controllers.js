@@ -14,6 +14,7 @@ app.classy.controller({
         this.refresh_interval = 5 * 60;
 
         this.$scope.counter = 0;
+        this.$scope.rq_default_count = -1;
         this.$scope.autorefresh = false;
         this.$scope.event = false;
         this.opened_travis_tabs = {};
@@ -31,6 +32,9 @@ app.classy.controller({
             source.addEventListener("refresh", (event) => {
                 this.update_pull_requests(JSON.parse(event.data));
                 this.$scope.$apply()
+            }, false);
+            source.addEventListener("rq-refresh", (event) => {
+                this.$scope.rq_default_count = event.data;
             }, false);
         } else {
             this.refresh();
