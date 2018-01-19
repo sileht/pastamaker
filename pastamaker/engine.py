@@ -87,7 +87,7 @@ class PastaMakerEngine(object):
 
         # We don't care about *labeled/*assigned/review_request*/edited
         if (event_type == "pull_request" and data["action"] not in [
-                "opened", "reopened", "closed", "synchronize"]):
+                "opened", "reopened", "closed", "synchronize", "edited"]):
             LOG.info("No need to proceed queue (unwanted pull_request action)")
             return
 
@@ -132,7 +132,7 @@ class PastaMakerEngine(object):
                 elif event_type == "pull_request_review_comment":
                     cache.pop("pastamaker_comments", None)
                 elif event_type == "pull_request":
-                    if data["action"] != "closed":
+                    if data["action"] not in ["closed", "edited"]:
                         cache.pop("pastamaker_commits", None)
                     if data["action"] == "synchronize":
                         cache.pop("pastamaker_ci_statuses", None)
@@ -147,6 +147,11 @@ class PastaMakerEngine(object):
             self.build_queue_and_save_to_cache(cached_pulls, current_branch,
                                                incoming_pull)
             LOG.info("Just update cache (ci status pending)")
+            return
+        elif event_type == "pull_request" and data["action"] == "edited":
+            self.build_queue_and_save_to_cache(cached_pulls, current_branch,
+                                               incoming_pull)
+            LOG.info("Just update cache (pull_request edited)")
             return
         elif event_type == "pull_request_review_comment":
             self.build_queue_and_save_to_cache(cached_pulls, current_branch,
