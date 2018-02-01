@@ -116,7 +116,7 @@ class PastaMakerEngine(object):
                 cache.pop("pastamaker_weight", None)
 
                 if (event_type == "status" and
-                        data["state"] == cache["pastamaker_travis_state"]):
+                        data["state"] == cache.get("pastamaker_travis_state")):
                     LOG.info("No need to proceed queue (got status without "
                              "state change '%s')" % data["state"])
                     return
