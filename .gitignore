@@ -7,3 +7,4 @@ cover
 .coverage
 dist
 *.pem
+pastamaker/env.py
