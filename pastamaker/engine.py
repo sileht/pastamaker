@@ -135,7 +135,9 @@ class PastaMakerEngine(object):
                     if data["action"] not in ["closed", "edited"]:
                         cache.pop("pastamaker_commits", None)
                     if data["action"] == "synchronize":
-                        cache.pop("pastamaker_ci_statuses", None)
+                        # NOTE(sileht): hardcode ci status that will be refresh
+                        # on next travis event
+                        cache["pastamaker_ci_statuses"] = {}
                         cache.pop("pastamaker_travis_state", None)
                         cache.pop("pastamaker_travis_url", None)
                         cache.pop("pastamaker_travis_detail", None)
