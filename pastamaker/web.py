@@ -14,9 +14,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import gevent
-import gevent.monkey
-gevent.monkey.patch_all()
+# NOTE(sileht): usefull for gunicon, not really for uwsgi
+#import gevent
+#import gevent.monkey
+#gevent.monkey.patch_all()
 
 import hmac
 import logging
