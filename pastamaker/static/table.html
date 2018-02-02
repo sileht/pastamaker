@@ -166,7 +166,8 @@
                         <span ng-if="job.state == 'failed'" class="bad glyphicon glyphicon-remove"></span>
                     </span>
                     <strong style="display:inline-block; width: 60px" ng-class="{maybe: ['queued', 'received', 'started', 'created'].indexOf(job.state) !== -1, good: job.state == 'passed', bad: ['errored', 'failed'].indexOf(job.state) !== -1}">#{{ job.number }}</strong>
-                    <a href="https://api.travis-ci.org/jobs/{{ job.id }}/log" target="_blank">{{ job.config.env }}</a>
+                    <a ng-if="job.config.env" href="https://api.travis-ci.org/jobs/{{ job.id }}/log" target="_blank">{{ job.config.env }}</a>
+                    <a ng-if="!job.config.env" href="https://api.travis-ci.org/jobs/{{ job.id }}/log" target="_blank">Job #{{ $index }} </a>
                     <i>
                         <span ng-if="['started'].indexOf(job.state) !== -1">started <time am-time-ago="job.started_at"></time></span>
                         <span ng-if="['queued', 'received', 'started', 'created'].indexOf(job.state) === -1">
