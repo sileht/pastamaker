@@ -15,9 +15,9 @@
 # under the License.
 
 # NOTE(sileht): usefull for gunicon, not really for uwsgi
-#import gevent
-#import gevent.monkey
-#gevent.monkey.patch_all()
+# import gevent
+# import gevent.monkey
+# gevent.monkey.patch_all()
 
 import hmac
 import logging

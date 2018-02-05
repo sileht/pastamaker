@@ -15,6 +15,6 @@
 # under the License.
 
 try:
-    import pastamaker.env
+    import pastamaker.env  # noqa
 except ImportError:
     pass
