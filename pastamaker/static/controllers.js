@@ -151,7 +151,7 @@ app.classy.controller({
             pull["open_" + type + "_row"] = true;
         },
         close_info: function(pull, type) {
-            var repo = pull.base.repo.full_tab
+            var repo = pull.base.repo.full_name
             var tab = "opened_" + type + "_tabs";
             if (!this[tab].hasOwnProperty(repo)){
                 this[tab][repo] = [];
