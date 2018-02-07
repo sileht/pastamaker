@@ -152,8 +152,13 @@ def _get_status(r):
 
         payload = r.get(key)
         if payload:
-            payload = lz4.block.decompress(payload)
-            pulls = ujson.loads(payload)
+            try:
+                pulls = ujson.loads(payload)
+            except Exception:
+                # Old format
+                payload = lz4.block.decompress(payload)
+                pulls = ujson.loads(payload)
+
             updated_at = list(sorted([p["updated_at"] for p in pulls]))[-1]
         queues.append({
             "owner": owner,

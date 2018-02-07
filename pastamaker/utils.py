@@ -63,7 +63,10 @@ def setup_logging():
         )],
         level=(logging.DEBUG if config.DEBUG else logging.INFO),
     )
-    daiquiri.set_default_log_levels([("rq", "ERROR")])
+    daiquiri.set_default_log_levels([
+        ("rq", "ERROR"),
+        # ("github.Requester", "DEBUG"),
+    ])
 
 
 def compute_hmac(data):

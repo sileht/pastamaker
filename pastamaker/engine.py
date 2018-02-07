@@ -97,8 +97,7 @@ class PastaMakerEngine(object):
             return
 
         fullify_extra = {
-            "ref_branch_sha": self._r.get_branch(current_branch).commit.sha,
-            "collaborators": [u.id for u in self._r.get_collaborators()],
+            "collaborators": [u.id for u in self._r.get_collaborators()]
         }
 
         if (event_type == "status" and
@@ -264,7 +263,7 @@ class PastaMakerEngine(object):
                  [p["number"] for p in raw_pulls])
         if raw_pulls:
             payload = ujson.dumps(raw_pulls)
-            payload = lz4.block.compress(payload)
+            # payload = lz4.block.compress(payload)
             self._redis.set(key, payload)
         else:
             self._redis.delete(key)
@@ -281,12 +280,12 @@ class PastaMakerEngine(object):
     def get_incoming_pull_from_cache(self, sha):
         for branch in self.get_cached_branches():
             cached_pulls = self.load_cache(branch)
-            incoming_pull = self.get_cache_for_pull(cached_pulls, sha=data["sha"])
+            incoming_pull = self.get_cache_for_pull(cached_pulls, sha=sha)
             if incoming_pull:
                 return gh_pr.from_event(self._r, incoming_pull)
 
     def get_cached_branches(self):
-        cache_key = "queues~%s~%s~*s" % (self._u.login, self._r.name)
+        cache_key = "queues~%s~%s~*" % (self._u.login, self._r.name)
         return [b.split('~')[3] for b in  self._redis.keys(cache_key)]
 
     def load_cache(self, branch):
@@ -294,7 +293,11 @@ class PastaMakerEngine(object):
                                          branch)
         data = self._redis.get(cache_key)
         if data:
-            return ujson.loads(lz4.block.decompress(data))
+            try:
+                return ujson.loads(data)
+            except Exception:
+                # Old format
+                return ujson.loads(lz4.block.decompress(data))
         else:
             return []
 
