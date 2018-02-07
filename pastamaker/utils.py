@@ -57,7 +57,9 @@ def setup_logging():
     daiquiri.setup(
         outputs=[daiquiri.output.Stream(
             sys.stdout,
-            formatter=logging.Formatter("%(levelname)s %(message)s"),
+            formatter=daiquiri.formatter.ColorFormatter(
+                "%(asctime)s [%(process)d] %(color)s%(levelname)-8.8s "
+                "%(name)s: %(message)s%(color_stop)s"),
         )],
         level=(logging.DEBUG if config.DEBUG else logging.INFO),
     )
