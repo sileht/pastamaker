@@ -380,8 +380,9 @@ class PastaMakerEngine(object):
                 p_info = self._get_logprefix()
             extra = ", ignored"
 
-        rate = self._g.get_rate_limit().rate
         LOG.info("***********************************************************")
-        LOG.info("%s ratelimit: %s/%s, reset at %s", p_info,
-                 rate.remaining, rate.limit, rate.reset)
         LOG.info("%s received event '%s'%s", p_info, event_type, extra)
+        if config.LOG_RATELIMIT:
+            rate = self._g.get_rate_limit().rate
+            LOG.info("%s ratelimit: %s/%s, reset at %s", p_info,
+                     rate.remaining, rate.limit, rate.reset)
