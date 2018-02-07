@@ -30,6 +30,8 @@ from pastamaker import utils
 
 LOG = logging.getLogger(__name__)
 
+TRAVIS_ENDING_STATES = ["failure", "error", "success"]
+
 
 class PastaMakerEngine(object):
     def __init__(self, g, user, repo):
@@ -52,9 +54,12 @@ class PastaMakerEngine(object):
         incoming_pull = gh_pr.from_event(self._r, data)
         if not incoming_pull:
             if event_type == "status":
-                issues = list(self._g.search_issues("is:pr %s" % data["sha"]))
-                if len(issues) >= 1:
-                    incoming_pull = self._r.get_pull(issues[0].number)
+                # It's safe to take the one from cache, since only status have changed
+                incoming_pull = self.get_incoming_pull_from_cache(data["sha"])
+                if not incoming_pull:
+                    issues = list(self._g.search_issues("is:pr %s" % data["sha"]))
+                    if len(issues) >= 1:
+                        incoming_pull = self._r.get_pull(issues[0].number)
 
             elif (event_type == "refresh" and
                   data["refresh_ref"].startswith("pull/")):
@@ -109,8 +114,8 @@ class PastaMakerEngine(object):
             if event_type == "refresh":
                 cache = {}
             else:
-                cache = self.get_cache_for_pull(cached_pulls, current_branch,
-                                                incoming_pull)
+                cache = self.get_cache_for_pull(cached_pulls,
+                                                incoming_pull.number)
                 cache = dict((k, v) for k, v in cache.items()
                              if k.startswith("pastamaker_"))
                 cache.pop("pastamaker_weight", None)
@@ -121,10 +126,14 @@ class PastaMakerEngine(object):
                              "state change '%s')" % data["state"])
                     return
                 elif event_type == "status":
-                    cache.pop("pastamaker_ci_statuses", None)
-                    cache.pop("pastamaker_travis_state", None)
-                    cache.pop("pastamaker_travis_url", None)
-                    cache.pop("pastamaker_travis_detail", None)
+                    cache["pastamaker_ci_statuses"] = {}
+                    cache["pastamaker_travis_state"] = data["state"]
+                    cache["pastamaker_travis_url"] = data["target_url"]
+                    if data["state"] in TRAVIS_ENDING_STATES:
+                        cache.pop("pastamaker_travis_detail", None)
+                    else:
+                        cache["pastamaker_travis_detail"] = None
+
                 elif event_type == "pull_request_review":
                     cache.pop("pastamaker_reviews", None)
                     cache.pop("pastamaker_approvals", None)
@@ -171,12 +180,11 @@ class PastaMakerEngine(object):
         # NOTE(sileht): We check the state of incoming_pull and the event
         # because user can have restart a travis job between the event
         # received and when we looks at it with travis API
-        ending_states = ["failure", "error", "success"]
         if (event_type == "status"
-                and data["state"] in ending_states
+                and data["state"] in TRAVIS_ENDING_STATES
                 and data["context"] in ["continuous-integration/travis-ci",
                                         "continuous-integration/travis-ci/pr"]
-                and incoming_pull.pastamaker["travis_state"] in ending_states
+                and incoming_pull.pastamaker["travis_state"] in TRAVIS_ENDING_STATES
                 and incoming_pull.pastamaker["travis_detail"]):
             incoming_pull.pastamaker_travis_post_build_results()
 
@@ -262,11 +270,24 @@ class PastaMakerEngine(object):
             self._redis.delete(key)
         self._redis.publish("update", key)
 
-    def get_cache_for_pull(self, raw_pulls, branch, incoming_pull):
+    def get_cache_for_pull(self, raw_pulls, number=None, sha=None):
         for pull in raw_pulls:
-            if pull["number"] == incoming_pull.number:
+            if sha is not None and pull["head"]["sha"] == sha:
+                return pull
+            if number is not None and pull["number"] == number:
                 return pull
         return {}
+
+    def get_incoming_pull_from_cache(self, sha):
+        for branch in self.get_cached_branches():
+            cached_pulls = self.load_cache(branch)
+            incoming_pull = self.get_cache_for_pull(cached_pulls, sha=data["sha"])
+            if incoming_pull:
+                return gh_pr.from_event(self._r, incoming_pull)
+
+    def get_cached_branches(self):
+        cache_key = "queues~%s~%s~*s" % (self._u.login, self._r.name)
+        return [b.split('~')[3] for b in  self._redis.keys(cache_key)]
 
     def load_cache(self, branch):
         cache_key = "queues~%s~%s~%s" % (self._u.login, self._r.name,
