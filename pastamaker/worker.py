@@ -45,11 +45,6 @@ def event_handler(event_type, data):
         LOG.error("rate limit reached")
 
 
-def error_handler(job, *exc_info):
-    pass
-    # LOG.error("event handler failure", exc_info=exc_info)
-
-
 def main():
     utils.setup_logging()
     config.log()
@@ -57,8 +52,7 @@ def main():
     if config.FLUSH_REDIS_ON_STARTUP:
         utils.get_redis().flushall()
     with rq.Connection(utils.get_redis()):
-        worker = rq.worker.HerokuWorker([rq.Queue('default')],
-                                        exception_handlers=[error_handler])
+        worker = rq.Worker(['default'])
         worker.work()
 
 
