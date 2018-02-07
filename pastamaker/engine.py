@@ -131,7 +131,7 @@ class PastaMakerEngine(object):
                     if data["state"] in TRAVIS_ENDING_STATES:
                         cache.pop("pastamaker_travis_detail", None)
                     else:
-                        cache["pastamaker_travis_detail"] = None
+                        cache["pastamaker_travis_detail"] = {}
 
                 elif event_type == "pull_request_review":
                     cache.pop("pastamaker_reviews", None)

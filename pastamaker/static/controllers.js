@@ -79,6 +79,10 @@ app.classy.controller({
                         }
                     });
 
+                    if (pull.pastamaker_travis_state == "pending") {
+                        this.refresh_travis(pull);
+                    }
+
                     // helper for filtered comments
                     var cache_key = this.get_comments_read_cache_key(pull)
                     pull.pastamaker_comments_filtered = this.filter_comments(pull.pastamaker_comments);
@@ -160,7 +164,10 @@ app.classy.controller({
             pull["open_" + type + "_row"] = false;
         },
         refresh_travis: function(pull) {
+            if (!pull.pastamaker_travis_detail)
+                pull.pastamaker_travis_detail = new Object()
             pull.pastamaker_travis_detail.refreshing = true;
+
             var build_id = pull.pastamaker_travis_url.split("?")[0].split("/").slice(-1)[0];
             var v2_headers = { "Accept": "application/vnd.travis-ci.2+json" };
             var travis_base_url = 'https://api.travis-ci.org';
