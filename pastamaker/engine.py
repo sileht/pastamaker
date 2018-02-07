@@ -30,7 +30,7 @@ from pastamaker import utils
 
 LOG = logging.getLogger(__name__)
 
-TRAVIS_ENDING_STATES = ["failure", "error", "success"]
+ENDING_STATES = ["failure", "error", "success"]
 
 
 class PastaMakerEngine(object):
@@ -54,10 +54,12 @@ class PastaMakerEngine(object):
         incoming_pull = gh_pr.from_event(self._r, data)
         if not incoming_pull:
             if event_type == "status":
-                # It's safe to take the one from cache, since only status have changed
+                # It's safe to take the one from cache, since only status have
+                # changed
                 incoming_pull = self.get_incoming_pull_from_cache(data["sha"])
                 if not incoming_pull:
-                    issues = list(self._g.search_issues("is:pr %s" % data["sha"]))
+                    issues = list(self._g.search_issues("is:pr %s" %
+                                                        data["sha"]))
                     if len(issues) >= 1:
                         incoming_pull = self._r.get_pull(issues[0].number)
 
@@ -128,7 +130,7 @@ class PastaMakerEngine(object):
                     cache["pastamaker_ci_statuses"] = {}
                     cache["pastamaker_travis_state"] = data["state"]
                     cache["pastamaker_travis_url"] = data["target_url"]
-                    if data["state"] in TRAVIS_ENDING_STATES:
+                    if data["state"] in ENDING_STATES:
                         cache.pop("pastamaker_travis_detail", None)
                     else:
                         cache["pastamaker_travis_detail"] = {}
@@ -180,10 +182,10 @@ class PastaMakerEngine(object):
         # because user can have restart a travis job between the event
         # received and when we looks at it with travis API
         if (event_type == "status"
-                and data["state"] in TRAVIS_ENDING_STATES
+                and data["state"] in ENDING_STATES
                 and data["context"] in ["continuous-integration/travis-ci",
                                         "continuous-integration/travis-ci/pr"]
-                and incoming_pull.pastamaker["travis_state"] in TRAVIS_ENDING_STATES
+                and incoming_pull.pastamaker["travis_state"] in ENDING_STATES
                 and incoming_pull.pastamaker["travis_detail"]):
             incoming_pull.pastamaker_travis_post_build_results()
 
@@ -286,7 +288,7 @@ class PastaMakerEngine(object):
 
     def get_cached_branches(self):
         cache_key = "queues~%s~%s~*" % (self._u.login, self._r.name)
-        return [b.split('~')[3] for b in  self._redis.keys(cache_key)]
+        return [b.split('~')[3] for b in self._redis.keys(cache_key)]
 
     def load_cache(self, branch):
         cache_key = "queues~%s~%s~%s" % (self._u.login, self._r.name,
