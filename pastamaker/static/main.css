@@ -63,16 +63,15 @@ a.closer:hover {
 
 /* minimum widths needed when working with multiple tables */
 table.multiple .last-updated {
-    width: 113px;
+    width: 110px;
 }
 table.multiple .reviews {
     padding-right: 3px;
     width: 65px;
 }
-table.multiple .queue {
-    width: 35px;
-    text-align: center;
-}
+table.multiple .milestone,
+table.multiple .queue,
+table.multiple .mergeable,
 table.multiple .state {
     width: 35px;
     text-align: center;
