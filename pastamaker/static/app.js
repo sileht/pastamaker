@@ -3,7 +3,8 @@ angular.module('triage', [
     'triage.controllers',
     'angularMoment',
     'ng-showdown',
-    'classy'
+    'LocalForageModule',
+    'classy',
 ])
 
 .config(['$routeProvider', '$locationProvider', '$showdownProvider', function ($routeProvider, $locationProvider, $showdownProvider) {
