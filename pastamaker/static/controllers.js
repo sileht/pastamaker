@@ -8,7 +8,7 @@ app.classy.controller({
 
 app.classy.controller({
     name: 'PullsController',
-    inject: ['$scope', '$http', '$interval', '$location', '$window'],
+    inject: ['$scope', '$http', '$interval', '$location', '$window', '$timeout'],
     init: function() {
         'use strict';
         this.refresh_interval = 5 * 60;
@@ -16,6 +16,7 @@ app.classy.controller({
         this.$scope.counter = 0;
         this.$scope.rq_default_count = -1;
         this.$scope.autorefresh = false;
+	this.$scope.travis_token = localStorage.getItem('travis_token');
         this.$scope.event = false;
         this.opened_travis_tabs = {};
         this.opened_commits_tabs = {};
@@ -169,7 +170,7 @@ app.classy.controller({
             pull.pastamaker_travis_detail.refreshing = true;
 
             var build_id = pull.pastamaker_travis_url.split("?")[0].split("/").slice(-1)[0];
-            var v2_headers = { "Accept": "application/vnd.travis-ci.2+json" };
+            var v2_headers = { "Accept": "application/vnd.travis-ci.2.1+json" };
             var travis_base_url = 'https://api.travis-ci.org';
             this.$http({
                 "method": "GET",
@@ -220,7 +221,25 @@ app.classy.controller({
                 }
             });
             return filtered_comments;
-        }
+        },
+	save_travis_token(){
+		localStorage.setItem('travis_token', this.$scope.travis_token);
+	},
+	restart_job: function(pull, job) {
+            var v3_headers = { "Travis-API-Version": "3", "Authorization": "token " + this.$scope.travis_token };
+            var travis_base_url = 'https://api.travis-ci.org';
+
+	    this.$http({
+		"method": "POST",
+		"url": travis_base_url + "/job/" + job.id + "/restart",
+		"headers": v3_headers,
+	    }).then((response) => {
+		job.restart_state = "ok";
+		this.$timeout(function() { this.refresh_travis(pull); }, 1000);
+	    }, (error) => {
+		job.restart_state = "ko";
+	    });
+	}
     },
 });
 
