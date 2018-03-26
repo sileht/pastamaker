@@ -15,20 +15,21 @@
 # under the License.
 
 import logging
+import sys
 
 from pastamaker import config
 
 LOG = logging.getLogger(__name__)
 
 
-def is_protected(g_repo, branch, enforce_admins, contexts):
+def is_protected(g_repo, branch, enforce_admins, contexts, required):
     g_branch = g_repo.get_branch(branch)
     if not g_branch.protected:
         return False
 
     headers, data = g_repo._requester.requestJsonAndCheck(
         "GET", g_repo.url + "/branches/" + branch + '/protection',
-        headers={'Accept': 'application/vnd.github.v3+json'}
+        headers={'Accept': 'application/vnd.github.luke-cage-preview+json'}
     )
 
     # NOTE(sileht): delete urls from the payload
@@ -44,6 +45,7 @@ def is_protected(g_repo, branch, enforce_admins, contexts):
         'required_pull_request_reviews': {
             "dismiss_stale_reviews": True,
             "require_code_owner_reviews": False,
+            "required_approving_review_count": required,
         },
         'required_status_checks': {
             'strict': True,
@@ -56,12 +58,12 @@ def is_protected(g_repo, branch, enforce_admins, contexts):
 
     return expected == data
 
-
-def protect(g_repo, branch, enforce_admins, contexts):
+def protect(g_repo, branch, enforce_admins, contexts, required):
     p = {
         'required_pull_request_reviews': {
             "dismiss_stale_reviews": True,
             "require_code_owner_reviews": False,
+            "required_approving_review_count": required,
         },
         'required_status_checks': {
             'strict': True,
@@ -81,7 +83,7 @@ def protect(g_repo, branch, enforce_admins, contexts):
         "{base_url}/branches/{branch}/protection".format(base_url=g_repo.url,
                                                          branch=branch),
         input=p,
-        headers={'Accept': 'application/vnd.github.v3+json'}
+        headers={'Accept': 'application/vnd.github.luke-cage-preview+json'}
     )
 
 
@@ -92,7 +94,40 @@ def protect_if_needed(g_repo, branch):
     contexts = config.get_value_from(
         config.BRANCH_PROTECTION_CONTEXTS,
         g_repo.full_name, branch, True)
-    if not is_protected(g_repo, branch, enforce_admins, contexts):
+    required = config.get_value_from(config.REQUIRED_APPROVALS,
+                                     g_repo.full_name,
+                                     branch, 2)
+    if not is_protected(g_repo, branch, enforce_admins, contexts, required):
         LOG.warning("Branch %s of %s is misconfigured, configuring it",
                     branch, g_repo.full_name)
-        protect(g_repo, branch, enforce_admins, contexts)
+        protect(g_repo, branch, enforce_admins, contexts, required)
+
+
+def test():
+    import github
+
+    from pastamaker import utils
+    from pastamaker import gh_pr
+
+    utils.setup_logging()
+    config.log()
+    gh_pr.monkeypatch_github()
+
+    parts = sys.argv[1].split("/")
+
+    LOG.info("Getting repo %s ..." % sys.argv[1])
+
+    integration = github.GithubIntegration(config.INTEGRATION_ID,
+                                           config.PRIVATE_KEY)
+
+    installation_id = utils.get_installation_id(integration, parts[3])
+    token = integration.get_access_token(installation_id).token
+    g = github.Github(token)
+    user = g.get_user(parts[3])
+    repo = user.get_repo(parts[4])
+    LOG.info("Protecting repo %s branch %s ..." % (sys.argv[1], sys.argv[2]))
+    protect_if_needed(repo, sys.argv[2])
+
+
+if __name__ == '__main__':
+    test()
