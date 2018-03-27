@@ -83,7 +83,6 @@ class PastaMakerEngine(object):
 
         # Unhandled and already logged
         if event_type not in ["pull_request", "pull_request_review",
-                              "pull_request_review_comment",
                               "status", "refresh"]:
             LOG.info("No need to proceed queue (unwanted event_type)")
             return
@@ -139,8 +138,6 @@ class PastaMakerEngine(object):
                     cache.pop("pastamaker_reviews", None)
                     cache.pop("pastamaker_approvals", None)
                     cache.pop("pastamaker_approved", None)
-                elif event_type == "pull_request_review_comment":
-                    cache.pop("pastamaker_comments", None)
                 elif event_type == "pull_request":
                     if data["action"] not in ["closed", "edited"]:
                         cache.pop("pastamaker_commits", None)
@@ -164,11 +161,6 @@ class PastaMakerEngine(object):
             self.build_queue_and_save_to_cache(cached_pulls, current_branch,
                                                incoming_pull)
             LOG.info("Just update cache (pull_request edited)")
-            return
-        elif event_type == "pull_request_review_comment":
-            self.build_queue_and_save_to_cache(cached_pulls, current_branch,
-                                               incoming_pull)
-            LOG.info("Just update cache (pull_request_review_comment)")
             return
         elif (event_type == "pull_request_review" and
                 data["review"]["user"]["id"] not in

@@ -20,7 +20,6 @@ app.classy.controller({
         this.$scope.event = false;
         this.opened_travis_tabs = {};
         this.opened_commits_tabs = {};
-        this.opened_comments_tabs = {};
         this.$scope.tabs_are_open = {};
 
         if(typeof(EventSource) !== "undefined") {
@@ -60,12 +59,9 @@ app.classy.controller({
         },
         update_pull_requests: function(data) {
             var old_tabs = {"travis": this.opened_travis_tabs,
-                            "commits": this.opened_commits_tabs,
-                            "comments": this.opened_comments_tabs}
-            var comments_read_to_keep = [];
+                            "commits": this.opened_commits_tabs}
             this.opened_travis_tabs = {};
             this.opened_commits_tabs = {};
-            this.opened_comments_tabs = {};
             this.$scope.groups = []
             data.forEach((group) => {
 
@@ -73,7 +69,7 @@ app.classy.controller({
 
                 group.pulls.forEach((pull) => {
                     repo = pull.base.repo.full_name;
-                    ["travis", "commits", "comments"].forEach((type) => {
+                    ["travis", "commits"].forEach((type) => {
                         var tabs = old_tabs[type];
                         if (tabs.hasOwnProperty(repo) && tabs[repo].includes(pull.number)) {
                             this.open_info(pull, type);
@@ -83,17 +79,6 @@ app.classy.controller({
                     if (pull.pastamaker_travis_state == "pending") {
                         this.refresh_travis(pull);
                     }
-
-                    // helper for filtered comments
-                    var cache_key = this.get_comments_read_cache_key(pull)
-                    pull.pastamaker_comments_filtered = this.filter_comments(pull.pastamaker_comments);
-                    pull.pastamaker_comments_read = this.$window.localStorage.getItem(cache_key);
-                    if (pull.pastamaker_comments_read == null){
-                        pull.pastamaker_comments_read = 0;
-                    } else {
-                        pull.pastamaker_comments_read = parseInt(pull.pastamaker_comments_read);
-                    }
-                    comments_read_to_keep.push(cache_key);
                 });
 
                 this.$scope.groups.push(group)
@@ -101,12 +86,6 @@ app.classy.controller({
             this.$scope.last_update = new Date();
             this.$scope.refreshing = false;
             this.$scope.counter = this.refresh_interval;
-
-            for (var k in this.$window.localStorage) {
-                if (!comments_read_to_keep.includes(k)) {
-                    this.$window.localStorage.removeItem(k);
-                }
-            }
         },
         on_error: function(data, status) {
             console.warn(data, status);
@@ -118,28 +97,17 @@ app.classy.controller({
                 group.pulls.forEach((pull) => {
                     this.close_info(pull, "travis");
                     this.close_info(pull, "commits");
-                    this.close_info(pull, "comments");
                 });
             });
-        },
-        get_comments_read_cache_key: function(pull){
-            return "comment~" + pull.base.repo.full_name + "~" + pull.number;
         },
         toggle_info: function(pull, type) {
             var open = pull["open_" + type + "_row"];
             this.close_info(pull, "commits");
-            this.close_info(pull, "comments");
             this.close_info(pull, "travis");
             if (!open) {
                 this.open_info(pull, type);
 
-                if (type === "comments") {
-                    pull.pastamaker_comments_read = pull.pastamaker_comments_filtered.length;
-                    this.$window.localStorage.setItem(
-                        this.get_comments_read_cache_key(pull),
-                        pull.pastamaker_comments_read.toString()
-                    );
-                } else if (type === "travis") {
+                if (type === "travis") {
                     if (["success", "failure", "error"].indexOf(pull.pastamaker_travis_state) === -1) {
                         this.refresh_travis(pull);
                     }
@@ -210,17 +178,6 @@ app.classy.controller({
         },
         JobSorter: function(job){
             return parseInt(job.number.replace(".", ""));
-        },
-        filter_comments: function(comments) {
-            var filtered_comments = []
-            comments.forEach((comment) => {
-                if (!comment.body.startsWith("Pull-request updated, HEAD is now")
-                    && comment.user.login !== "pastamaker[bot]"
-                    && comment.state === "COMMENT") {
-                    filtered_comments.push(comment)
-                }
-            });
-            return filtered_comments;
         },
 	save_travis_token(){
 		this.$localForage.setItem('travis_token', this.$scope.travis_token);

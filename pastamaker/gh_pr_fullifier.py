@@ -186,26 +186,10 @@ def compute_weight(pull, **extra):
     return weight
 
 
-def compute_comments(pull, **extra):
-    raw_comments = ([v.raw_data for v in pull.get_review_comments()] +
-                    [v.raw_data for v in pull.get_issue_comments()] +
-                    [v.raw_data for v in pull.pastamaker["reviews"]])
-
-    for c in raw_comments:
-        if "submitted_at" in c:
-            c["created_at"] = c["submitted_at"]
-        if "state" not in c:
-            c["state"] = "COMMENT"
-
-    return [c for c in sorted(
-        raw_comments, key=operator.itemgetter("created_at"))]
-
-
 # Order matter, some method need result of some other
 FULLIFIER = [
     ("commits", lambda p, **extra: list(p.get_commits())),
     ("reviews", lambda p, **extra: list(p.get_reviews())),
-    ("comments", compute_comments),
     ("approvals", compute_approvals),          # Need reviews
     ("approved", compute_approved),            # Need approvals
     ("ci_statuses", compute_ci_statuses),      # Need approvals
