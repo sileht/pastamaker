@@ -75,7 +75,7 @@ Heroku Setup
 
 Dashboard
 =========
-Pastamaker offers a dashboard that you can access using a Web brower. Just
+Pastamaker offers a dashboard that you can access using a Web browser. Just
 point to the URL where your WSGI service runs.
 
 .. image:: dashboard.jpg
