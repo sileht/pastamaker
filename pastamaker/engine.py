@@ -45,7 +45,7 @@ class PastaMakerEngine(object):
 
         if event_type == "status":
             # Don't compute the queue for nothing
-            if data["context"].startswith("%s/" % config.context):
+            if data["context"].startswith("%s/" % config.CONTEXT):
                 return
             elif data["context"] == "continuous-integration/travis-ci/push":
                 return
@@ -126,6 +126,7 @@ class PastaMakerEngine(object):
                              "state change '%s')" % data["state"])
                     return
                 elif event_type == "status":
+                    cache.pop("pastamaker_combined_status", None)
                     cache["pastamaker_ci_statuses"] = {}
                     cache["pastamaker_travis_state"] = data["state"]
                     cache["pastamaker_travis_url"] = data["target_url"]
@@ -144,6 +145,7 @@ class PastaMakerEngine(object):
                     if data["action"] == "synchronize":
                         # NOTE(sileht): hardcode ci status that will be refresh
                         # on next travis event
+                        cache.pop("pastamaker_combined_status", None)
                         cache["pastamaker_ci_statuses"] = {}
                         cache.pop("pastamaker_travis_state", None)
                         cache.pop("pastamaker_travis_url", None)
@@ -234,9 +236,7 @@ class PastaMakerEngine(object):
                 LOG.info("%s -> merge fail", p.pretty())
 
         elif p.mergeable_state == "behind":
-            commit = self._r.get_commit(p.head.sha)
-            status = commit.get_combined_status()
-            if status.state == "success":
+            if p.pastamaker["combined_status"] == "success":
                 # rebase it and wait the next pull_request event
                 # (synchronize)
                 if p.pastamaker_update_branch():

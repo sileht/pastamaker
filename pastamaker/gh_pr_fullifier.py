@@ -116,6 +116,12 @@ def compute_approvals(pull, **extra):
             required, remaining)
 
 
+def compute_combined_status(pull, **extra):
+    commit = pull.base.repo.get_commit(pull.head.sha)
+    status = commit.get_combined_status()
+    return status.state
+
+
 def compute_ci_statuses(pull, **extra):
     # We need only travis, so shorcut to it here
     if "travis" in extra:
@@ -157,22 +163,22 @@ def compute_travis_url(pull, **extra):
 def compute_weight(pull, **extra):
     if not pull.pastamaker["approved"]:
         weight = -1
-    elif (pull.mergeable_state in ["clean", "unstable"]
-          and pull.pastamaker["travis_state"] == "success"):
+    elif (pull.mergeable_state == "clean"
+          and pull.pastamaker["combined_status"] == "success"):
         # Best PR ever, up2date and CI OK
         weight = 11
     elif pull.mergeable_state in ["clean", "unstable"]:
         weight = 10
     elif (pull.mergeable_state == "blocked"
-          and pull.pastamaker["travis_state"] == "pending"):
+          and pull.pastamaker["combined_status"] == "pending"):
         # Maybe clean soon, or maybe this is the previous run
         # selected PR that we just rebase
         weight = 10
     elif pull.mergeable_state == "behind":
         # Not up2date, but ready to merge, is branch updatable
-        if pull.pastamaker["travis_state"] == "success":
+        if pull.pastamaker["combined_status"] == "success":
             weight = 7
-        elif pull.pastamaker["travis_state"] == "pending":
+        elif pull.pastamaker["combined_status"] == "pending":
             weight = 5
         else:
             weight = -1
@@ -182,7 +188,7 @@ def compute_weight(pull, **extra):
         weight += 1
     # LOG.info("%s prio: %s, %s, %s, %s, %s", pull.pretty(), weight,
     #          pull.pastamaker["approved"], pull.mergeable_state,
-    #          pull.pastamaker["travis_state"])
+    #          pull.pastamaker["combined_status"])
     return weight
 
 
@@ -190,6 +196,7 @@ def compute_weight(pull, **extra):
 FULLIFIER = [
     ("commits", lambda p, **extra: list(p.get_commits())),
     ("reviews", lambda p, **extra: list(p.get_reviews())),
+    ("combined_status", compute_combined_status),
     ("approvals", compute_approvals),          # Need reviews
     ("approved", compute_approved),            # Need approvals
     ("ci_statuses", compute_ci_statuses),      # Need approvals

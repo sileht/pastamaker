@@ -18,6 +18,7 @@ import logging
 
 import github
 
+from pastamaker import config
 from pastamaker import gh_pr_fullifier
 from pastamaker import webhack
 
@@ -26,7 +27,7 @@ LOG = logging.getLogger(__name__)
 
 def pretty(self):
     extra = getattr(self, "pastamaker", {})
-    travis_state = extra.get("travis_state", "nc")
+    status = extra.get("combined_status", "nc")
     approvals = len(extra["approvals"][0]) if "approvals" in extra else "nc"
     weight = extra["weight"] if extra.get("weight", -1) >= 0 else "NA"
     synced = extra.get("sync_with_master", "nc")
@@ -38,7 +39,7 @@ def pretty(self):
         ("merged" if self.state == "merged"
          else (self.mergeable_state or "none")),
         synced,
-        travis_state,
+        status,
         approvals,
         weight
     )
@@ -48,21 +49,25 @@ def pastamaker_github_post_check_status(self):
     # NOTE(sileht): not really usefull, but this make UX user friendly since
     # something appear on the pull request.
     state = "success"
-    description = "pull request registered for automatic merging"
+    description = "PR automerge enabled"
+    detail = []
+    if self.pastamaker["combined_status"] != "success":
+        detail.append("CI")
+    if not self.pastamaker["approved"]:
+        detail.append("approvals")
 
-    context = "%s/pr" % config.context
-    old_context = "%s/reviewers" % config.context
+    if detail:
+        description += ", warting for %s" % " and ".join(detail)
+
+    context = "%s/pr" % config.CONTEXT
+    old_context = "%s/reviewers" % config.CONTEXT
     context_to_update = None
 
     commit = self.base.repo.get_commit(self.head.sha)
     for s in commit.get_statuses():
-        if s.context == context:
-            # Already done
-            return False
-        elif s.context == old_context:
-            # Old format
+        if s.context in [context, old_context]:
             if (s.state != state or s.description != description):
-                context_to_update = old_context
+                context_to_update = s.context
             break
     else:
         context_to_update = context
