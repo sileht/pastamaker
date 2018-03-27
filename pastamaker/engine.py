@@ -45,7 +45,7 @@ class PastaMakerEngine(object):
 
         if event_type == "status":
             # Don't compute the queue for nothing
-            if data["context"].startswith("pastamaker/"):
+            if data["context"].startswith("%s/" % config.context):
                 return
             elif data["context"] == "continuous-integration/travis-ci/push":
                 return

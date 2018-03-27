@@ -45,26 +45,29 @@ def pretty(self):
 
 
 def pastamaker_github_post_check_status(self):
-    approved = len(self.pastamaker["approvals"][0])
-    requested_changes = len(self.pastamaker["approvals"][1])
-    required = self.pastamaker["approvals"][2]
-    if requested_changes != 0:
-        state = "failure"
-        description = "%s changes requested" % requested_changes
-    else:
-        state = "success" if approved >= required else "pending"
-        description = "%s of %s required reviews" % (approved, required)
+    # NOTE(sileht): not really usefull, but this make UX user friendly since
+    # something appear on the pull request.
+    state = "success"
+    description = "pull request registered for automatic merging"
+
+    context = "%s/pr" % config.context
+    old_context = "%s/reviewers" % config.context
+    context_to_update = None
 
     commit = self.base.repo.get_commit(self.head.sha)
     for s in commit.get_statuses():
-        if s.context == "pastamaker/reviewers":
-            need_update = (s.state != state or
-                           s.description != description)
+        if s.context == context:
+            # Already done
+            return False
+        elif s.context == old_context:
+            # Old format
+            if (s.state != state or s.description != description):
+                context_to_update = old_context
             break
     else:
-        need_update = True
+        context_to_update = context
 
-    if need_update:
+    if context_to_update:
         # NOTE(sileht): We can't use commit.create_status() because
         # if use the head repo instead of the base repo
         try:
@@ -73,14 +76,15 @@ def pastamaker_github_post_check_status(self):
                 self.base.repo.url + "/statuses/" + self.head.sha,
                 input={'state': state,
                        'description': description,
-                       'context': "pastamaker/reviewers"},
+                       'context': context_to_update},
                 headers={'Accept':
                          'application/vnd.github.machine-man-preview+json'}
             )
         except github.GithubException as e:
             LOG.exception("%s set status fail: %s",
                           self.pretty(), e.data["message"])
-    return need_update
+
+    return context_to_update is not None
 
 
 def pastamaker_travis_post_build_results(self):
