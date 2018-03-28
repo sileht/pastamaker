@@ -19,7 +19,6 @@ import logging
 import re
 import sys
 
-import mock
 import requests
 
 from pastamaker import config
@@ -35,7 +34,8 @@ class ParsingError(Exception):
 
 
 def get_authencity_token(text):
-    m = re.search('name="authenticity_token"[^>]*value="([^"]*)" />', text.replace("\n", ""))
+    m = re.search('name="authenticity_token"[^>]*value="([^"]*)" />',
+                  text.replace("\n", ""))
     if not m:
         raise ParsingError("Authencity token not found")
     return m.group(1)
@@ -61,13 +61,14 @@ def get_web_session(force=False):
         r.raise_for_status()
         token = get_authencity_token(r.text)
         r = global_session.post("https://github.com/session",
-                   data={"commit": "Sign+in",
-                         "utf8": "✓",
-                         "authenticity_token": token,
-                         "login": config.WEBHACK_USERNAME,
-                         "password": config.WEBHACK_PASSWORD})
+                                data={"commit": "Sign+in",
+                                      "utf8": "✓",
+                                      "authenticity_token": token,
+                                      "login": config.WEBHACK_USERNAME,
+                                      "password": config.WEBHACK_PASSWORD})
         r.raise_for_status()
     return global_session
+
 
 def _web_github_update_branch(p):
     s = get_web_session()
@@ -100,11 +101,12 @@ def web_github_update_branch(p):
                   p.number, e)
         return False
 
+
 def test():
     import github
 
-    from pastamaker import utils
     from pastamaker import gh_pr
+    from pastamaker import utils
 
     utils.setup_logging()
     config.log()

@@ -16,7 +16,6 @@
 
 import copy
 import logging
-import operator
 import time
 
 import github

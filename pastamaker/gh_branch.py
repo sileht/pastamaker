@@ -58,6 +58,7 @@ def is_protected(g_repo, branch, enforce_admins, contexts, required):
 
     return expected == data
 
+
 def protect(g_repo, branch, enforce_admins, contexts, required):
     p = {
         'required_pull_request_reviews': {
@@ -106,8 +107,8 @@ def protect_if_needed(g_repo, branch):
 def test():
     import github
 
-    from pastamaker import utils
     from pastamaker import gh_pr
+    from pastamaker import utils
 
     utils.setup_logging()
     config.log()
