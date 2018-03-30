@@ -17,6 +17,7 @@
 import collections
 import copy
 import logging
+import re
 import sys
 
 import github
@@ -124,7 +125,10 @@ def get_branch_policy(g_repo, branch):
         return policy
 
     dict_merge(policy, policies["default"])
-    # TODO(sileht): Read the per branches policy
+
+    for branch_re in policies["branches"]:
+        if re.match(branch_re, branch):
+            dict_merge(policy, policies["branches"][branch_re])
 
     return policy
 
