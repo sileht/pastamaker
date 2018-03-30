@@ -20,6 +20,7 @@ import logging
 import sys
 
 import github
+import voluptuous
 import yaml
 
 from pastamaker import config
@@ -65,8 +66,6 @@ def is_protected(g_repo, branch, policy):
     policy["required_status_checks"]["contexts"] = sorted(
         policy["required_status_checks"]["contexts"])
 
-    print(policy)
-    print(data)
     return policy == data
 
 
@@ -85,14 +84,43 @@ def protect(g_repo, branch, policy):
     )
 
 
+Policy = voluptuous.Schema({
+    'required_status_checks': voluptuous.Any(
+        None, {
+            'strict': bool,
+            'contexts': [str],
+        }),
+    'required_pull_request_reviews': {
+        'dismiss_stale_reviews': bool,
+        'require_code_owner_reviews': bool,
+        'required_approving_review_count': int,
+    },
+    'restrictions': voluptuous.Any(None, []),
+    'enforce_admins': bool,
+})
+
+UserConfigurationSchema = voluptuous.Schema({
+    'policies': {
+        'default': Policy,
+        'branches': {str: Policy},
+    }
+})
+
+
+def validate_policy(content):
+    return UserConfigurationSchema(yaml.load(content))
+
+
 def get_branch_policy(g_repo, branch):
     # TODO(sileht): Ensure the file is valid
     policy = copy.deepcopy(DEFAULT_POLICY)
 
     try:
         content = g_repo.get_contents(".mergify.yml").decoded_content
-        policies = yaml.load(content)["policies"]
+        policies = validate_policy(content)["policies"]
     except github.UnknownObjectException:
+        return policy
+    except voluptuous.MultipleInvalid:
         return policy
 
     dict_merge(policy, policies["default"])
