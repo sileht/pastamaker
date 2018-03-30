@@ -97,7 +97,7 @@ class PastaMakerEngine(object):
             LOG.info("No need to proceed queue (unwanted pull_request action)")
             return
 
-        branch_policy = gh_branch.get_branch_policy(self._g, current_branch)
+        branch_policy = gh_branch.get_branch_policy(self._r, current_branch)
 
         fullify_extra = {
             "branch_policy": branch_policy,
