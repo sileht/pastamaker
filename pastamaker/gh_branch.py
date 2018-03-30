@@ -14,15 +14,32 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import collections
+import copy
 import logging
 import sys
+
+import github
+import yaml
 
 from pastamaker import config
 
 LOG = logging.getLogger(__name__)
 
+with file("default_policy.yml") as f:
+    DEFAULT_POLICY = yaml.load(f.read())
 
-def is_protected(g_repo, branch, enforce_admins, contexts, required):
+
+def dict_merge(dct, merge_dct):
+    for k, v in merge_dct.items():
+        if (k in dct and isinstance(dct[k], dict)
+                and isinstance(merge_dct[k], collections.Mapping)):
+            dict_merge(dct[k], merge_dct[k])
+        else:
+            dct[k] = merge_dct[k]
+
+
+def is_protected(g_repo, branch, policy):
     g_branch = g_repo.get_branch(branch)
     if not g_branch.protected:
         return False
@@ -32,7 +49,7 @@ def is_protected(g_repo, branch, enforce_admins, contexts, required):
         headers={'Accept': 'application/vnd.github.luke-cage-preview+json'}
     )
 
-    # NOTE(sileht): delete urls from the payload
+    # NOTE(sileht): Transform the payload into policy
     del data['url']
     del data["required_status_checks"]["url"]
     del data["required_status_checks"]["contexts_url"]
@@ -40,42 +57,22 @@ def is_protected(g_repo, branch, enforce_admins, contexts, required):
     del data["enforce_admins"]["url"]
     data["required_status_checks"]["contexts"] = sorted(
         data["required_status_checks"]["contexts"])
+    data["enforce_admins"] = data["enforce_admins"]["enabled"]
 
-    expected = {
-        'required_pull_request_reviews': {
-            "dismiss_stale_reviews": True,
-            "require_code_owner_reviews": False,
-            "required_approving_review_count": required,
-        },
-        'required_status_checks': {
-            'strict': True,
-            'contexts': sorted(contexts),
-        },
-        'enforce_admins': {
-            "enabled": enforce_admins
-        }
-    }
+    if "restrictions" not in data:
+        data["restrictions"] = None
 
-    return expected == data
+    policy["required_status_checks"]["contexts"] = sorted(
+        policy["required_status_checks"]["contexts"])
+
+    print(policy)
+    print(data)
+    return policy == data
 
 
-def protect(g_repo, branch, enforce_admins, contexts, required):
-    p = {
-        'required_pull_request_reviews': {
-            "dismiss_stale_reviews": True,
-            "require_code_owner_reviews": False,
-            "required_approving_review_count": required,
-        },
-        'required_status_checks': {
-            'strict': True,
-            'contexts': contexts,
-        },
-        'restrictions': None,
-        'enforce_admins': enforce_admins,
-    }
-
+def protect(g_repo, branch, policy):
     if g_repo.organization:
-        p['required_pull_request_reviews']['dismissal_restrictions'] = {}
+        policy['required_pull_request_reviews']['dismissal_restrictions'] = {}
 
     # NOTE(sileht): Not yet part of the API
     # maybe soon https://github.com/PyGithub/PyGithub/pull/527
@@ -83,25 +80,32 @@ def protect(g_repo, branch, enforce_admins, contexts, required):
         'PUT',
         "{base_url}/branches/{branch}/protection".format(base_url=g_repo.url,
                                                          branch=branch),
-        input=p,
+        input=policy,
         headers={'Accept': 'application/vnd.github.luke-cage-preview+json'}
     )
 
 
-def protect_if_needed(g_repo, branch):
-    enforce_admins = config.get_value_from(
-        config.BRANCH_PROTECTION_ENFORCE_ADMINS,
-        g_repo.full_name, branch, True)
-    contexts = config.get_value_from(
-        config.BRANCH_PROTECTION_CONTEXTS,
-        g_repo.full_name, branch, True)
-    required = config.get_value_from(config.REQUIRED_APPROVALS,
-                                     g_repo.full_name,
-                                     branch, 2)
-    if not is_protected(g_repo, branch, enforce_admins, contexts, required):
+def get_branch_policy(g_repo, branch):
+    # TODO(sileht): Ensure the file is valid
+    policy = copy.deepcopy(DEFAULT_POLICY)
+
+    try:
+        content = g_repo.get_contents(".mergify.yml").decoded_content
+        policies = yaml.load(content)["policies"]
+    except github.UnknownObjectException:
+        return policy
+
+    dict_merge(policy, policies["default"])
+    # TODO(sileht): Read the per branches policy
+
+    return policy
+
+
+def protect_if_needed(g_repo, branch, policy):
+    if not is_protected(g_repo, branch, policy):
         LOG.warning("Branch %s of %s is misconfigured, configuring it",
                     branch, g_repo.full_name)
-        protect(g_repo, branch, enforce_admins, contexts, required)
+        protect(g_repo, branch, policy)
 
 
 def test():
@@ -127,7 +131,8 @@ def test():
     user = g.get_user(parts[3])
     repo = user.get_repo(parts[4])
     LOG.info("Protecting repo %s branch %s ..." % (sys.argv[1], sys.argv[2]))
-    protect_if_needed(repo, sys.argv[2])
+    policy = get_branch_policy(repo, sys.argv[2])
+    protect_if_needed(repo, sys.argv[2], policy)
 
 
 if __name__ == '__main__':

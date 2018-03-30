@@ -22,12 +22,8 @@ import yaml
 LOG = logging.getLogger(__name__)
 
 
-with open("config_default.yml") as f:
-    CONFIG = yaml.load(f.read())
-
 with open("config.yml") as f:
-    for key, value in dict(yaml.load(f.read())).items():
-        CONFIG[key] = value
+    CONFIG = yaml.load(f.read())
 
 global cfg_msg
 cfg_msg = ""
@@ -53,21 +49,3 @@ def log():
 ##################### CONFIGURATION ######################
 %s##########################################################
 """ % cfg_msg)
-
-
-def get_value_from(config_options, repo, branch, default):
-    login, project = repo.split("/")
-    for name in ["%s@%s" % (repo, branch),
-                 repo,
-                 "%s/-@%s" % (login, branch),
-                 "-/%s@%s" % (project, project),
-                 "%s/-" % login,
-                 "-/%s" % project,
-                 "-@%s" % branch,
-                 "default"]:
-        if name in config_options:
-            value = config_options[name]
-            break
-    else:
-        value = default
-    return value

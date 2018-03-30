@@ -97,7 +97,10 @@ class PastaMakerEngine(object):
             LOG.info("No need to proceed queue (unwanted pull_request action)")
             return
 
+        branch_policy = gh_branch.get_branch_policy(self._g, current_branch)
+
         fullify_extra = {
+            "branch_policy": branch_policy,
             "collaborators": [u.id for u in self._r.get_collaborators()]
         }
 
@@ -207,7 +210,8 @@ class PastaMakerEngine(object):
         if queues:
             # protect the branch before doing anything
             try:
-                gh_branch.protect_if_needed(self._r, current_branch)
+                gh_branch.protect_if_needed(self._r, current_branch,
+                                            branch_policy)
             except github.UnknownObjectException:
                 LOG.exception("Fail to protect branch, disabled automerge")
                 return

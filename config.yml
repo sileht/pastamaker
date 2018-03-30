@@ -1,18 +1,13 @@
 ---
-required_approvals:
-  default: 1
-  gnocchixyz/gnocchi@master: 2
-  gnocchixyz/python-gnocchiclient@master: 2
+context: pastamaker
+workers: 5
+base_url: "<required>"
+integration_id: "<required>"
+private_key: "<required>"
+webhook_secret: "<required>"
+webhack_username: "<required>"
+webhack_password: "<required>"
 
-branch_protection_enforce_admins:
-  default: false
-  gnocchixyz/-: true
-  gnocchixyz/grafana-gnocchi-datasource: false
-  gnocchixyz/gnocchi-docker: false
-
-branch_protection_contexts:
-  default:
-    - continuous-integration/travis-ci
-  sileht/cotyledon:
-    - continuous-integration/tea
-    - continuous-integration/travis-ci
+log_ratelimit: false
+debug: false
+flush_redis_on_startup: false

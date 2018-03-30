@@ -22,8 +22,6 @@ import github
 import requests
 import six.moves
 
-from pastamaker import config
-
 LOG = logging.getLogger(__name__)
 TRAVIS_BASE_URL = 'https://api.travis-ci.org'
 TRAVIS_V2_HEADERS = {"Accept": "application/vnd.travis-ci.2+json",
@@ -105,9 +103,9 @@ def compute_approvals(pull, **extra):
             LOG.error("%s FIXME review state unhandled: %s",
                       pull.pretty(), review.state)
 
-    required = config.get_value_from(config.REQUIRED_APPROVALS,
-                                     pull.base.repo.full_name,
-                                     pull.base.ref, 2)
+    required = extra["branch_policy"]["required_pull_request_reviews"
+                                      ]["required_approving_review_count"]
+
     # FIXME(sileht): Compute the thing on JS side
     remaining = list(six.moves.range(max(0, required - len(reviews_ok))))
     return ([users_info[u] for u in reviews_ok],
