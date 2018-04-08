@@ -28,7 +28,7 @@ from pastamaker import config
 
 LOG = logging.getLogger(__name__)
 
-with file("default_policy.yml") as f:
+with open("default_policy.yml", "r") as f:
     DEFAULT_POLICY = yaml.load(f.read())
 
 
