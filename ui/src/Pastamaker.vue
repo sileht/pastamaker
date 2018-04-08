@@ -60,13 +60,13 @@ export default {
   methods: {
     toggle_info (pull, type) {
       var open = pull['open_' + type + '_row']
-      this.close_info('commits')
-      this.close_info('travis')
+      this.close_info(pull, 'commits')
+      this.close_info(pull, 'travis')
       if (!open) {
-        this.open_info(type)
+        this.open_info(pull, type)
         if (type === 'travis') {
           if (['success', 'failure', 'error'].indexOf(pull.pastamaker_travis_state) === -1) {
-            this.refresh_travis()
+            this.refresh_travis(pull)
           }
         }
       }
@@ -78,7 +78,8 @@ export default {
         tab[repo] = []
       }
       tab[repo].push(pull.number)
-      pull['open_' + type + '_row'] = true
+      this.$set(pull, 'open_' + type + '_row', true)
+      console.log(pull.open_travis_row)
     },
     close_info (pull, type) {
       var repo = pull.base.repo.full_name
@@ -87,14 +88,7 @@ export default {
         tab[repo] = []
       }
       tab[repo] = tab[repo].filter(e => e !== pull.number)
-      pull['open_' + type + '_row'] = false
-    },
-    refresh_travis (pull) {
-    }
-  },
-  events: {
-    toggle_info (pull, type) {
-      this.toggle_info(pull, type)
+      this.$set(pull, 'open_' + type + '_row', false)
     },
     refresh_travis (pull) {
       if (!pull.pastamaker_travis_detail) {
@@ -146,6 +140,13 @@ export default {
       this.opened_travis_tabs = {}
       this.opened_commits_tabs = {}
       */
+      data.forEach(group => {
+        group.pulls.forEach(p => {
+          p.open_travis_row = false
+          p.open_commits_row = false
+          p.pastamaker_travis_detail = null
+        })
+      })
       this.groups = data
       this.last_update = new Date()
       this.refreshing = false

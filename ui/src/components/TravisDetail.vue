@@ -1,5 +1,5 @@
 <template>
-    <tr v-if="open_travis_row">
+    <tr>
         <td colspan="11">
             <a href="#" class="pull-right" @click="toggle_info('travis')"><span class="glyphicon glyphicon-remove"></span></a>
             <a href="#" class="pull-right" style="margin-right:5px" @click="refresh_travis()"><span class="glyphicon glyphicon-refresh"></span></a>
@@ -38,10 +38,10 @@ export default {
   },
   methods: {
     toggle_info (type) {
-      this.$dispatch('toggle_info', this.pull, type)
+      this.$parent.$parent.toggle_info(this.pull, type)
     },
     refresh_travis () {
-      this.$dispatch('refresh_travis', this.pull)
+      this.$parent.$parent.refresh_travis(this.pull)
     }
   },
   data () {

@@ -22,7 +22,7 @@
      <tbody>
          <template v-for="pull in pulls">
              <Pull :key="pull.number" :pull="pull"></Pull>
-             <TravisDetail :key="'travis' + pull.number" :pull="pull"></TravisDetail>
+             <TravisDetail :key="'travis' + pull.number" :pull="pull" v-if="pull.open_travis_row"></TravisDetail>
          </template>
      </tbody>
     </table>

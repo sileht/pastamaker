@@ -73,12 +73,12 @@ export default {
   props: ['pull'],
   methods: {
     toggle_info (type) {
-      this.$parent.$parent.$emit('toggle_info', this.pull, type)
+      this.$parent.$parent.toggle_info(this.pull, type)
     }
   },
   created () {
     if (this.pull.pastamaker_travis_state === 'pending') {
-      this.$parent.$parent.$emit('refresh_travis', this.pull)
+      this.$parent.$parent.refresh_travis(this.pull)
     }
     /*
     var repo = this.pull.base.repo.full_name
