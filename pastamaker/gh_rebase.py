@@ -101,5 +101,18 @@ def test():
     forked_branch_ref.edit(last_commit.sha, force=True)
 
 
+# TODO(sileht):
+# $ curl https://api.github.com/repos/sileht/repotest/pulls/2 | jq .commits
+# 2
+# $ git clone https://18b50660e26a8f6bcf7846d14b921406399736d4@github.com/sileht-tester/repotest --depth=$((2 + 1)) -b sileht/testpr
+# $ cd repotest
+# $ git remote add upstream https://0c7eb44b621270ea7c93c0e54d342d329febaa67@github.com/sileht/repotest.git
+# $ git log | grep Date | tail -1
+# Date:   Fri Mar 30 21:30:26 2018 (10 days ago)
+# $ git fetch upstream master --shallow-since="Fri Mar 30 21:30:26 2018"
+# $ git rebase upstream/master
+# $ git push origin sileht/testpr:sileht/testpr
+
+
 if __name__ == '__main__':
     test()
