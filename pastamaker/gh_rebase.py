@@ -15,8 +15,11 @@
 # under the License.
 
 import logging
+import subprocess
+import sys
+import tempfile
 
-from datetime import datetime
+import github
 import requests
 
 from pastamaker import config
@@ -47,8 +50,6 @@ def get_oauth_access_token():
 
 
 def test():
-    import github
-
     from pastamaker import gh_pr
     from pastamaker import utils
 
@@ -56,62 +57,56 @@ def test():
     config.log()
     gh_pr.monkeypatch_github()
 
-    integration = github.GithubIntegration(config.INTEGRATION_ID,
-                                           config.PRIVATE_KEY)
+    token = sys.argv[1]
 
-    installation_id = utils.get_installation_id(integration, "sileht")
-    token = integration.get_access_token(installation_id).token
+    rebase(token, "sileht", "repotest", 2)
+
+
+class Gitter(object):
+    def __init__(self):
+        self.tmp = tempfile.mkdtemp(prefix="pastamaker-gitter")
+
+    def __call__(self, *args, **kwargs):
+        kwargs["cwd"] = self.tmp
+        p = subprocess.Popen(*args, **kwargs)
+        p.wait()
+        return p.stdout, p.stderr
+
+
+def rebase(token, user, repo, pull_number):
+    # NOTE(sileht):
+    # $ curl https://api.github.com/repos/sileht/repotest/pulls/2 | jq .commits
+    # 2
+    # $ git clone https://XXXXX@github.com/sileht-tester/repotest \
+    #           --depth=$((2 + 1)) -b sileht/testpr
+    # $ cd repotest
+    # $ git remote add upstream https://XXXXX@github.com/sileht/repotest.git
+    # $ git log | grep Date | tail -1
+    # Date:   Fri Mar 30 21:30:26 2018 (10 days ago)
+    # $ git fetch upstream master --shallow-since="Fri Mar 30 21:30:26 2018"
+    # $ git rebase upstream/master
+    # $ git push origin sileht/testpr:sileht/testpr
+
     g = github.Github(token)
-    user = g.get_user("sileht")
-    repo = user.get_repo("repotest")
-    pull = repo.get_pull(2)
-    ref = repo.get_git_ref("heads/%s" % pull.base.ref)
-    print("%s head: %s" % (pull.base.ref, ref.object.sha))
-    print("pull base: %s" % (pull.base.sha))
+    pull = g.get_user(user).get_repo(repo).get_pull(2)
 
-    if (ref.object.sha == pull.base.sha):
-        return
+    git = Gitter()
+    try:
+        git("clone", "--depth=%d" % (int(pull.commits) + 1),
+            "-b", pull.ref,
+            "https://%s@github.com/%s/" % (token, pull.head.full_name), ".")
+        git("remote", "add",
+            "https://%s@github.com/%s.git" % (token, pull.base.full_name))
 
-    pull_head = repo.get_git_commit(pull.head.sha)
+        last_commit_date = git("log", "--pretty='format:%cI'",
+                               stdout=subprocess.PIPE).split("\n")[-1]
 
-    forked_branch_head = repo.get_git_commit(ref.object.sha)
-
-    author = github.InputGitAuthor(
-        "mergify.io", "sileht-mergify@sileht.net",
-        "%sZ" % datetime.now().isoformat())
-
-    print(pull_head)
-    print(pull_head.tree)
-    print(forked_branch_head)
-    print(forked_branch_head.message)
-    print(forked_branch_head.tree)
-
-    last_commit = repo.create_git_commit(
-        message="Merge branch '%s' into %s" % (pull.base.ref, pull.head.ref),
-        tree=pull_head.tree,
-        parents=[pull_head, forked_branch_head],
-        author=author,
-        committer=author
-    )
-
-    forked_repo = pull.get_repo(pull.head.repo.name)
-    forked_branch_ref = forked_repo.get_git_ref("heads/%s" % pull.head.ref)
-    print(forked_branch_ref.url)
-    print(last_commit.sha)
-    forked_branch_ref.edit(last_commit.sha, force=True)
-
-
-# TODO(sileht):
-# $ curl https://api.github.com/repos/sileht/repotest/pulls/2 | jq .commits
-# 2
-# $ git clone https://18b50660e26a8f6bcf7846d14b921406399736d4@github.com/sileht-tester/repotest --depth=$((2 + 1)) -b sileht/testpr
-# $ cd repotest
-# $ git remote add upstream https://0c7eb44b621270ea7c93c0e54d342d329febaa67@github.com/sileht/repotest.git
-# $ git log | grep Date | tail -1
-# Date:   Fri Mar 30 21:30:26 2018 (10 days ago)
-# $ git fetch upstream master --shallow-since="Fri Mar 30 21:30:26 2018"
-# $ git rebase upstream/master
-# $ git push origin sileht/testpr:sileht/testpr
+        git("fetch", "upstream", pull.base.ref,
+            "--shallow-since='%s'" % last_commit_date)
+        git("rebase", "upstream/%s" % pull.base.ref)
+        git("push", "origin", pull.head.full_name)
+    finally:
+        git.cleanup()
 
 
 if __name__ == '__main__':
