@@ -245,7 +245,7 @@ class PastaMakerEngine(object):
             if p.pastamaker["combined_status"] == "success":
                 # rebase it and wait the next pull_request event
                 # (synchronize)
-                if p.pastamaker_rebase(self._updater_token):
+                if p.pastamaker_update_branch(self._updater_token):
                     LOG.info("%s -> branch updated", p.pretty())
                 else:
                     LOG.info("%s -> branch not updatable, "

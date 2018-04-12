@@ -20,7 +20,7 @@ import github
 
 from pastamaker import config
 from pastamaker import gh_pr_fullifier
-from pastamaker import gh_rebase
+from pastamaker import gh_update_branch
 from pastamaker import webhack
 
 LOG = logging.getLogger(__name__)
@@ -196,8 +196,7 @@ def monkeypatch_github():
         pastamaker_travis_post_build_results
 
     # Missing Github API
-    p.pastamaker_update_branch = webhack.web_github_update_branch
-    p.pastamaker_rebase = gh_rebase.rebase
+    p.pastamaker_update_branch = gh_update_branch.update_branch
 
 
     # FIXME(sileht): remove me, used by engine for sorting pulls

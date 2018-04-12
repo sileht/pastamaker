@@ -48,7 +48,7 @@ class Gitter(object):
         shutil.rmtree(self.tmp)
 
 
-def rebase(self, token):
+def update_branch(self, token, merge=True):
     # NOTE(sileht):
     # $ curl https://api.github.com/repos/sileht/repotest/pulls/2 | jq .commits
     # 2
@@ -77,8 +77,11 @@ def rebase(self, token):
 
         git("fetch", "upstream", self.base.ref,
             "--shallow-since='%s'" % last_commit_date)
-        git("rebase", "upstream/%s" % self.base.ref)
-        git("push", "--force", "origin", self.head.ref)
+        if merge:
+            git("merge", "upstream/%s" % self.base.ref, "-m", "Merge branch '%s' into '%s'" % (self.base.ref, self.head.ref))
+        else:
+            git("rebase", "upstream/%s" % self.base.ref)
+        git("push", "origin", self.head.ref)
     except Exception:
         LOG.exception("git rebase fail")
         return False
@@ -107,7 +110,7 @@ def test():
         user = g.get_user(parts[3])
         repo = user.get_repo(parts[4])
         pull = repo.get_pull(int(parts[6]))
-        rebase(pull, token)
+        update_branch(pull, token)
     else:
         # With access_token got from integration
         integration = github.GithubIntegration(config.INTEGRATION_ID,
@@ -115,8 +118,7 @@ def test():
 
         installation_id = utils.get_installation_id(integration, parts[3])
         token = integration.get_access_token(installation_id).token
-
-    rebase(pull, "x-access-token:%s" % token)
+        update_branch(pull, "x-access-token:%s" % token)
 
 
 if __name__ == '__main__':
