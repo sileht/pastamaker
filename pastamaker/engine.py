@@ -34,8 +34,10 @@ ENDING_STATES = ["failure", "error", "success"]
 
 
 class PastaMakerEngine(object):
-    def __init__(self, g, user, repo):
+    def __init__(self, g, installation_id, user, repo):
         self._g = g
+        self._installation_id = instasllation_id
+        self._updater_token = self._redis.get("installation-token-%s" % self._installation_id)
         self._u = user
         self._r = repo
         self._redis = utils.get_redis()
@@ -194,14 +196,14 @@ class PastaMakerEngine(object):
                 current_branch, **fullify_extra)
             if event_type == "refresh":
                 for p in queues:
-                    p.pastamaker_github_post_check_status()
+                    p.pastamaker_github_post_check_status(self._installation_id, selF._updater_token)
             else:
                 LOG.warning("FIXME: We got a event without incoming_pull:"
                             "%s : %s" % (event_type, data))
         else:
             if event_type in ["pull_request", "pull_request_review",
                               "refresh"]:
-                incoming_pull.pastamaker_github_post_check_status()
+                incoming_pull.pastamaker_github_post_check_status(self._installation_id, self._updater_token)
             queues = self.build_queue_and_save_to_cache(cached_pulls,
                                                         current_branch,
                                                         incoming_pull)
@@ -243,7 +245,7 @@ class PastaMakerEngine(object):
             if p.pastamaker["combined_status"] == "success":
                 # rebase it and wait the next pull_request event
                 # (synchronize)
-                if p.pastamaker_update_branch():
+                if p.pastamaker_rebase(self._updater_token):
                     LOG.info("%s -> branch updated", p.pretty())
                 else:
                     LOG.info("%s -> branch not updatable, "

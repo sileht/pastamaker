@@ -20,6 +20,7 @@ import github
 
 from pastamaker import config
 from pastamaker import gh_pr_fullifier
+from pastamaker import gh_rebase
 from pastamaker import webhack
 
 LOG = logging.getLogger(__name__)
@@ -45,11 +46,22 @@ def pretty(self):
     )
 
 
-def pastamaker_github_post_check_status(self):
+def pastamaker_github_post_check_status(self, installation_id, updater_token):
     # NOTE(sileht): not really usefull, but this make UX user friendly since
     # something appear on the pull request.
-    state = "success"
-    description = "PR automerge enabled"
+    if not self.maintainer_can_modify:
+        state = "failure"
+        description = "PR automerge enabled, but PR owner doesn't allow modification"
+        target_url = "https://gh.mergify.io/"
+    elif not updater_token:
+        state = "failure"
+        description = "PR automerge enabled, but no user access_token setuped for rebasing"
+        target_url = "https://gh.mergify.io/login/" + installation_id
+    else:
+        state = "success"
+        description = "PR automerge enabled"
+        target_url = "https://gh.mergify.io/"
+
     detail = []
     if self.pastamaker["combined_status"] != "success":
         detail.append("CI")
@@ -81,6 +93,7 @@ def pastamaker_github_post_check_status(self):
                 self.base.repo.url + "/statuses/" + self.head.sha,
                 input={'state': state,
                        'description': description,
+                       'target_url': target_url,
                        'context': context_to_update},
                 headers={'Accept':
                          'application/vnd.github.machine-man-preview+json'}
@@ -181,6 +194,7 @@ def monkeypatch_github():
 
     # Missing Github API
     p.pastamaker_update_branch = webhack.web_github_update_branch
+    p.pastamaker_rebase = gh_rebase.rebase
 
     # FIXME(sileht): remove me, used by engine for sorting pulls
     p.pastamaker_weight = property(lambda p: p.pastamaker["weight"])
