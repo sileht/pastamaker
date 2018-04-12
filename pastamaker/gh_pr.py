@@ -46,21 +46,17 @@ def pretty(self):
 
 
 def pastamaker_github_post_check_status(self, installation_id, updater_token):
-    # NOTE(sileht): not really usefull, but this make UX user friendly since
-    # something appear on the pull request.
+    state = "success"
     description = "PR automerge enabled"
+    target_url = config.BASE_URL
+
     if not self.maintainer_can_modify:
         state = "failure"
         description += ", but PR owner doesn't allow modification"
-        target_url = "https://gh.mergify.io/"
     elif not updater_token:
         state = "failure"
         description += ", but no user access_token setuped for rebasing"
-        target_url = ("https://gh.mergify.io/login?installation_id=%s" %
-                      installation_id)
-    else:
-        state = "success"
-        target_url = "https://gh.mergify.io/"
+        target_url += "/login?installation_id=%s" % installation_id
 
     detail = []
     if self.pastamaker["combined_status"] != "success":

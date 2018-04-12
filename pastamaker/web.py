@@ -277,10 +277,10 @@ def login():
     installation_id = flask.request.args.get('installation_id')
     params = {
         'client_id': config.OAUTH_CLIENT_ID,
-        'redirect_uri': "https://gh.mergify.io/logged/%s" % installation_id,
+        'redirect_uri': "%s/logged/%s" % (config.BASE_URL, installation_id),
         'scope': 'repo',
         'note': 'Mergify.io PR rebase/merge bot',
-        'note_url': 'https://mergify.io'
+        'note_url': config.BASE_URL
     }
     url = "https://github.com/login/oauth/authorize?"
     url = url + "&".join("=".join(i) for i in params.items())
