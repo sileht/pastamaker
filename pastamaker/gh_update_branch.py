@@ -22,13 +22,13 @@ import sys
 import tempfile
 
 import github
-import requests
 
 from pastamaker import config
 
 LOG = logging.getLogger(__name__)
 
 NULL = file(os.devnull, 'wb')
+
 
 class Gitter(object):
     def __init__(self):
@@ -66,7 +66,8 @@ def update_branch(self, token, merge=True):
     try:
         git("clone", "--depth=%d" % (int(self.commits) + 1),
             "-b", self.head.ref,
-            "https://%s@github.com/%s/" % (token, self.head.repo.full_name), ".")
+            "https://%s@github.com/%s/" % (token, self.head.repo.full_name),
+            ".")
         git("remote", "add", "upstream",
             "https://%s@github.com/%s.git" % (token, self.base.repo.full_name))
         git("config", "user.name", "Mergifyio")
@@ -78,9 +79,11 @@ def update_branch(self, token, merge=True):
         git("fetch", "upstream", self.base.ref,
             "--shallow-since='%s'" % last_commit_date)
         if merge:
-            git("merge", "upstream/%s" % self.base.ref, "-m", "Merge branch '%s' into '%s'" % (self.base.ref, self.head.ref))
+            git("merge", "upstream/%s" % self.base.ref, "-m",
+                "Merge branch '%s' into '%s'" % (self.base.ref, self.head.ref))
         else:
-            # TODO(sileht): This will removes approvals, we need to add them back
+            # TODO(sileht): This will removes approvals, we need to add them
+            # back
             git("rebase", "upstream/%s" % self.base.ref)
         git("push", "origin", self.head.ref)
     except Exception:
@@ -98,7 +101,6 @@ def test():
     utils.setup_logging()
     config.log()
     gh_pr.monkeypatch_github()
-
 
     parts = sys.argv[1].split("/")
     LOG.info("Getting repo %s ..." % sys.argv[1])

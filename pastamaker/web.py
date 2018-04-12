@@ -275,7 +275,6 @@ def authentification():
 @app.route("/login")
 def login():
     installation_id = flask.request.args.get('installation_id')
-    url = "https://github.com/login/oauth/authorize?"
     params = {
         'client_id': config.OAUTH_CLIENT_ID,
         'redirect_uri': "https://gh.mergify.io/logged/%s" % installation_id,
@@ -283,19 +282,23 @@ def login():
         'note': 'Mergify.io PR rebase/merge bot',
         'note_url': 'https://mergify.io'
     }
-    return flask.redirect(url + "&".join("=".join(i) for i in params.items()), code=302)
+    url = "https://github.com/login/oauth/authorize?"
+    url = url + "&".join("=".join(i) for i in params.items())
+    return flask.redirect(url, code=302)
 
 
 @app.route("/logged/<installation_id>")
 def logged(installation_id):
     code = flask.request.args.get('code')
-    r = requests.post("https://github.com/login/oauth/access_token", params=dict(
-        client_id=config.OAUTH_CLIENT_ID,
-        client_secret=config.OAUTH_CLIENT_SECRET,
-        code=code,
-    ), headers={'Accept': 'application/json'})
+    r = requests.post("https://github.com/login/oauth/access_token",
+                      params=dict(
+                          client_id=config.OAUTH_CLIENT_ID,
+                          client_secret=config.OAUTH_CLIENT_SECRET,
+                          code=code,
+                      ), headers={'Accept': 'application/json'})
 
-    # TODO(sileht): Ensure the access token have write access to all installation repositories
-    get_redis().set("installation-token-%s" % installation_id, r.json()['access_token'])
+    # TODO(sileht): Ensure the access token have write access to all
+    # installation repositories
+    get_redis().set("installation-token-%s" % installation_id,
+                    r.json()['access_token'])
     return "Registration OK"
-
