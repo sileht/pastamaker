@@ -56,7 +56,7 @@ def pastamaker_github_post_check_status(self, installation_id, updater_token):
     elif not updater_token:
         state = "failure"
         description = "PR automerge enabled, but no user access_token setuped for rebasing"
-        target_url = "https://gh.mergify.io/login/" + installation_id
+        target_url = "https://gh.mergify.io/login?installation_id=%s" % installation_id
     else:
         state = "success"
         description = "PR automerge enabled"
@@ -183,6 +183,9 @@ def from_cache(repo, data):
 def monkeypatch_github():
     p = github.PullRequest.PullRequest
 
+    # Missing attribute
+    p.maintainer_can_modify = property(lambda p: p.raw_data["maintainer_can_modify"])
+
     p.pretty = pretty
     p.fullify = gh_pr_fullifier.fullify
     p.jsonify = gh_pr_fullifier.jsonify
@@ -195,6 +198,7 @@ def monkeypatch_github():
     # Missing Github API
     p.pastamaker_update_branch = webhack.web_github_update_branch
     p.pastamaker_rebase = gh_rebase.rebase
+
 
     # FIXME(sileht): remove me, used by engine for sorting pulls
     p.pastamaker_weight = property(lambda p: p.pastamaker["weight"])

@@ -173,7 +173,9 @@ def compute_weight(pull, **extra):
         weight = 10
     elif pull.mergeable_state == "behind":
         # Not up2date, but ready to merge, is branch updatable
-        if pull.pastamaker["combined_status"] == "success":
+        if not pull.maintainer_can_modify:
+            weight = -1
+        elif pull.pastamaker["combined_status"] == "success":
             weight = 7
         elif pull.pastamaker["combined_status"] == "pending":
             weight = 5

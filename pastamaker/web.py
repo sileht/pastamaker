@@ -26,6 +26,7 @@ import os
 import flask
 import github
 import lz4.block
+import requests
 import rq
 import rq_dashboard
 import ujson
@@ -271,17 +272,18 @@ def authentification():
         flask.abort(403)
 
 
-@app.route("/login/<installation_id>")
-def login(installation_id):
+@app.route("/login")
+def login():
+    installation_id = flask.request.args.get('installation_id')
     url = "https://github.com/login/oauth/authorize?"
     params = {
         'client_id': config.OAUTH_CLIENT_ID,
-        'redirect_url': "https://gh.mergify.io/logged/%s" % installation_id,
+        'redirect_uri': "https://gh.mergify.io/logged/%s" % installation_id,
         'scope': 'repo',
         'note': 'Mergify.io PR rebase/merge bot',
         'note_url': 'https://mergify.io'
     }
-    flask.redirect(url + "&".join("=".join(i) for i in params.items()), code=302)
+    return flask.redirect(url + "&".join("=".join(i) for i in params.items()), code=302)
 
 
 @app.route("/logged/<installation_id>")

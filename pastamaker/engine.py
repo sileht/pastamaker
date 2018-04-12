@@ -35,12 +35,12 @@ ENDING_STATES = ["failure", "error", "success"]
 
 class PastaMakerEngine(object):
     def __init__(self, g, installation_id, user, repo):
+        self._redis = utils.get_redis()
         self._g = g
-        self._installation_id = instasllation_id
+        self._installation_id = installation_id
         self._updater_token = self._redis.get("installation-token-%s" % self._installation_id)
         self._u = user
         self._r = repo
-        self._redis = utils.get_redis()
 
     def handle(self, event_type, data):
         # Everything start here
