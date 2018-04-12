@@ -296,9 +296,20 @@ def logged(installation_id):
                           client_secret=config.OAUTH_CLIENT_SECRET,
                           code=code,
                       ), headers={'Accept': 'application/json'})
+    r.raise_for_status()
+    token = r.json().get('access_token')
+    if not token:
+        return flask.abort(400, 'Invalid callback code')
 
-    # TODO(sileht): Ensure the access token have write access to all
-    # installation repositories
-    get_redis().set("installation-token-%s" % installation_id,
-                    r.json()['access_token'])
+    r = requests.get(
+        "https://api.github.com/user/installations/%s/repositories" % installation_id,
+        headers={"Accept": "application/vnd.github.machine-man-preview+json",
+                 "Authorization": "token %s" % token})
+    if r.status_code == 403:
+        return flask.abort(400, "You don't have the write access on "
+            "repositories of this %s installation" % config.CONTEXT)
+
+    r.raise_for_status()
+
+    get_redis().set("installation-token-%s" % installation_id, token)
     return "Registration OK"
