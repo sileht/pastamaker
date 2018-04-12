@@ -69,6 +69,8 @@ def rebase(self, token):
             "https://%s@github.com/%s/" % (token, self.head.repo.full_name), ".")
         git("remote", "add", "upstream",
             "https://%s@github.com/%s.git" % (token, self.base.repo.full_name))
+        git("config", "user.name", "Mergify")
+        git("config", "user.email", "noreply@mergify.io")
 
         p = git("log", "--pretty='format:%cI'", stdout=subprocess.PIPE)
         last_commit_date = p.stdout.read().split("\n")[-1]
