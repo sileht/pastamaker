@@ -17,6 +17,7 @@
 import collections
 import copy
 import logging
+import os
 import re
 import sys
 
