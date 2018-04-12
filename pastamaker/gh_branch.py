@@ -120,7 +120,15 @@ def get_branch_policy(g_repo, branch):
         content = g_repo.get_contents(".mergify.yml").decoded_content
         policies = validate_policy(content)["policies"]
     except github.UnknownObjectException:
-        return policy
+
+        # NOTE(sileht): Fallback to a local file
+        f = "%s_policy.yml" % g_repo.owner.login
+        if os.path.exists(f):
+            with open(f, "r") as f:
+                policies = yaml.load(f.read())
+        else:
+            return policy
+
     except voluptuous.MultipleInvalid:
         return policy
 
