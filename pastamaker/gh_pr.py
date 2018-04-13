@@ -48,7 +48,7 @@ def pretty(self):
 def pastamaker_github_post_check_status(self, installation_id, updater_token,
         branch_policy_error):
     if branch_policy_error:
-        state = "failure":
+        state = "failure"
         link = "and"
         description = "PR automerge disabled (%s)", branch_policy_error
         # FIXME(sileht): put url to mergify doc
