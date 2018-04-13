@@ -137,7 +137,6 @@ def get_branch_policy(g_repo, branch):
     try:
         policies = validate_policy(content)["policies"]
     except voluptuous.MultipleInvalid as e:
-        # TODO(sileht): We should report this to maintainer somehow
         raise NoPolicies("Content of .mergify.yml is invalid: %s" % str(e))
 
     dict_merge(policy, policies["default"])
