@@ -302,11 +302,13 @@ def logged(installation_id):
         return flask.abort(400, 'Invalid callback code')
 
     r = requests.get(
-        "https://api.github.com/user/installations/%s/repositories" % installation_id,
+        "https://api.github.com/user/installations/%s/repositories" %
+        installation_id,
         headers={"Accept": "application/vnd.github.machine-man-preview+json",
                  "Authorization": "token %s" % token})
     if r.status_code == 403:
-        return flask.abort(400, "You don't have the write access on "
+        return flask.abort(
+            400, "You don't have the write access on "
             "repositories of this %s installation" % config.CONTEXT)
 
     r.raise_for_status()

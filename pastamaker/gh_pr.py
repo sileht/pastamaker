@@ -46,7 +46,8 @@ def pretty(self):
 
 
 def pastamaker_github_post_check_status(self, installation_id, updater_token,
-        branch_policy_error):
+                                        branch_policy_error):
+
     if branch_policy_error:
         state = "failure"
         link = "and"
@@ -66,7 +67,6 @@ def pastamaker_github_post_check_status(self, installation_id, updater_token,
         state = "failure"
         description += ", %s no user access_token setuped for rebasing" % link
         target_url += "/login?installation_id=%s" % installation_id
-
 
     detail = []
     if self.pastamaker["combined_status"] != "success":

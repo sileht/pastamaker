@@ -104,9 +104,9 @@ def compute_approvals(pull, **extra):
                       pull.pretty(), review.state)
 
     try:
-        required = extra["branch_policy"]["required_pull_request_reviews"
-                ]["required_approving_review_count"]
-    except KeyError, TypeError:
+        required = extra["branch_policy"][
+            "required_pull_request_reviews"]["required_approving_review_count"]
+    except KeyError:
         return [], [], 1, 1
 
     # FIXME(sileht): Compute the thing on JS side

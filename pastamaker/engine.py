@@ -102,7 +102,8 @@ class PastaMakerEngine(object):
 
         try:
             branch_policy_error = None
-            branch_policy = gh_branch.get_branch_policy(self._r, current_branch)
+            branch_policy = gh_branch.get_branch_policy(self._r,
+                                                        current_branch)
         except gh_branch.NoPolicies as e:
             branch_policy_error = str(e)
             branch_policy = None
