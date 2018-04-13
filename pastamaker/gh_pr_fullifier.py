@@ -103,8 +103,11 @@ def compute_approvals(pull, **extra):
             LOG.error("%s FIXME review state unhandled: %s",
                       pull.pretty(), review.state)
 
-    required = extra["branch_policy"]["required_pull_request_reviews"
-                                      ]["required_approving_review_count"]
+    try:
+        required = extra["branch_policy"]["required_pull_request_reviews"
+                ]["required_approving_review_count"]
+    except KeyError, TypeError:
+        return [], [], 1, 1
 
     # FIXME(sileht): Compute the thing on JS side
     remaining = list(six.moves.range(max(0, required - len(reviews_ok))))

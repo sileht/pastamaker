@@ -45,18 +45,28 @@ def pretty(self):
     )
 
 
-def pastamaker_github_post_check_status(self, installation_id, updater_token):
-    state = "success"
-    description = "PR automerge enabled"
-    target_url = config.BASE_URL
+def pastamaker_github_post_check_status(self, installation_id, updater_token,
+        branch_policy_error):
+    if branch_policy_error:
+        state = "failure":
+        link = "and"
+        description = "PR automerge disabled (%s)", branch_policy_error
+        # FIXME(sileht): put url to mergify doc
+        target_url = config.BASE_URL
+    else:
+        state = "success"
+        link = "but"
+        description = "PR automerge enabled"
+        target_url = config.BASE_URL
 
     if not self.maintainer_can_modify:
         state = "failure"
-        description += ", but PR owner doesn't allow modification"
+        description += ", %s PR owner doesn't allow modification" % link
     elif not updater_token:
         state = "failure"
-        description += ", but no user access_token setuped for rebasing"
+        description += ", %s no user access_token setuped for rebasing" % link
         target_url += "/login?installation_id=%s" % installation_id
+
 
     detail = []
     if self.pastamaker["combined_status"] != "success":

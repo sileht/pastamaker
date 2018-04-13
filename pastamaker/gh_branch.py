@@ -113,6 +113,10 @@ def validate_policy(content):
     return UserConfigurationSchema(yaml.load(content))
 
 
+class NoPolicies(Exception):
+    pass
+
+
 def get_branch_policy(g_repo, branch):
     # TODO(sileht): Ensure the file is valid
     policy = copy.deepcopy(DEFAULT_POLICY)
@@ -128,15 +132,13 @@ def get_branch_policy(g_repo, branch):
             with open(f, "r") as f:
                 content = f.read()
         else:
-            LOG.info("fallback to defaults")
-            return policy
+            raise NoPolicies(".mergify.yml is missing")
 
     try:
         policies = validate_policy(content)["policies"]
-    except voluptuous.MultipleInvalid:
+    except voluptuous.MultipleInvalid as e:
         # TODO(sileht): We should report this to maintainer somehow
-        LOG.warn("invalid policy file, fallback to defaults")
-        return policy
+        raise NoPolicies("Content of .mergify.yml is invalid: %s" % str(e))
 
     dict_merge(policy, policies["default"])
 

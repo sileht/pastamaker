@@ -100,7 +100,12 @@ class PastaMakerEngine(object):
             LOG.info("No need to proceed queue (unwanted pull_request action)")
             return
 
-        branch_policy = gh_branch.get_branch_policy(self._r, current_branch)
+        try:
+            branch_policy_error = None
+            branch_policy = gh_branch.get_branch_policy(self._r, current_branch)
+        except gh_branch.NoPolicies as e:
+            branch_policy_error = str(e)
+            branch_policy = None
 
         fullify_extra = {
             "branch_policy": branch_policy,
@@ -198,7 +203,8 @@ class PastaMakerEngine(object):
             if event_type == "refresh":
                 for p in queues:
                     p.pastamaker_github_post_check_status(
-                        self._installation_id, self._updater_token)
+                        self._installation_id, self._updater_token,
+                        branch_policy_error)
             else:
                 LOG.warning("FIXME: We got a event without incoming_pull:"
                             "%s : %s" % (event_type, data))
@@ -206,13 +212,14 @@ class PastaMakerEngine(object):
             if event_type in ["pull_request", "pull_request_review",
                               "refresh"]:
                 incoming_pull.pastamaker_github_post_check_status(
-                    self._installation_id, self._updater_token)
+                    self._installation_id, self._updater_token,
+                    branch_policy_error)
             queues = self.build_queue_and_save_to_cache(cached_pulls,
                                                         current_branch,
                                                         incoming_pull)
 
         # Proceed the queue
-        if queues:
+        if branch_policy and queues:
             # protect the branch before doing anything
             try:
                 gh_branch.protect_if_needed(self._r, current_branch,
@@ -221,8 +228,10 @@ class PastaMakerEngine(object):
                 LOG.exception("Fail to protect branch, disabled automerge")
                 return
             self.proceed_queues(queues)
+        elif not branch_policy:
+            LOG.info("No policies setuped, skipping queues processing")
         else:
-            LOG.info("Nothing queued, skipping the event")
+            LOG.info("Nothing queued, skipping queues processing")
 
     ###########################
     # State machine goes here #
