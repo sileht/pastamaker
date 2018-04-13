@@ -119,18 +119,23 @@ def get_branch_policy(g_repo, branch):
 
     try:
         content = g_repo.get_contents(".mergify.yml").decoded_content
-        policies = validate_policy(content)["policies"]
+        LOG.info("found mergify.yml: %s", content)
     except github.UnknownObjectException:
-
         # NOTE(sileht): Fallback to a local file
         f = "%s_policy.yml" % g_repo.owner.login
         if os.path.exists(f):
+            LOG.info("fallback to local %s", f)
             with open(f, "r") as f:
-                policies = yaml.load(f.read())
+                content = f.read()
         else:
+            LOG.info("fallback to defaults")
             return policy
 
+    try:
+        policies = validate_policy(content)["policies"]
     except voluptuous.MultipleInvalid:
+        # TODO(sileht): We should report this to maintainer somehow
+        LOG.warn("invalid policy file, fallback to defaults")
         return policy
 
     dict_merge(policy, policies["default"])
@@ -144,8 +149,8 @@ def get_branch_policy(g_repo, branch):
 
 def protect_if_needed(g_repo, branch, policy):
     if not is_protected(g_repo, branch, policy):
-        LOG.warning("Branch %s of %s is misconfigured, configuring it",
-                    branch, g_repo.full_name)
+        LOG.warning("Branch %s of %s is misconfigured, configuring it to %s",
+                    branch, g_repo.full_name, policy)
         protect(g_repo, branch, policy)
 
 
