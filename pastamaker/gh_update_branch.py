@@ -27,7 +27,7 @@ from pastamaker import config
 
 LOG = logging.getLogger(__name__)
 
-NULL = file(os.devnull, 'wb')
+NULL = open(os.devnull, 'wb')
 
 
 class Gitter(object):
